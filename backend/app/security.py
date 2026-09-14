@@ -36,7 +36,7 @@ def verify_password(password: str, encoded: str) -> bool:
 def create_access_token(user: User) -> str:
     now = datetime.now(timezone.utc)
     return jwt.encode(
-        {"sub": str(user.id), "role": user.role, "iat": now, "exp": now + timedelta(hours=12)},
+        {"sub": str(user.id), "role": user.role, "ver": user.token_version, "iat": now, "exp": now + timedelta(hours=12)},
         get_settings().app_secret_key,
         algorithm="HS256",
     )
@@ -53,7 +53,7 @@ def get_current_user(
         user = db.get(User, int(payload["sub"]))
     except Exception as exc:
         raise HTTPException(status_code=401, detail="登录已失效") from exc
-    if not user or not user.is_active:
+    if not user or not user.is_active or payload.get("ver") != user.token_version:
         raise HTTPException(status_code=401, detail="账户不可用")
     return user
 
@@ -62,4 +62,3 @@ def require_manager(user: User = Depends(get_current_user)) -> User:
     if user.role != "manager":
         raise HTTPException(status_code=403, detail="需要运营主管权限")
     return user
-

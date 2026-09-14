@@ -39,6 +39,7 @@ services:
     build: ./backend
     env_file: .env
     environment:
+      APP_VERSION: ${APP_VERSION:-dev}
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-ecommerce_ops}:${POSTGRES_PASSWORD:-ecommerce_ops_dev}@postgres:5432/${POSTGRES_DB:-ecommerce_ops}
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/1
@@ -48,13 +49,18 @@ services:
     depends_on:
       postgres: {condition: service_healthy}
       redis: {condition: service_healthy}
+      migrate: {condition: service_completed_successfully}
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=2)"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/ready', timeout=2)"]
       interval: 10s
       timeout: 4s
       retries: 12
     restart: unless-stopped
+    stop_grace_period: 30s
     mem_limit: 512m
+    security_opt: ["no-new-privileges:true"]
+    tmpfs: ["/tmp"]
+    logging: {driver: json-file, options: {max-size: "10m", max-file: "3"}}
     networks: [internal]
 
   worker:
@@ -62,6 +68,7 @@ services:
     command: ["celery", "-A", "app.tasks.celery_app", "worker", "--loglevel=INFO", "--concurrency=1"]
     env_file: .env
     environment:
+      APP_VERSION: ${APP_VERSION:-dev}
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-ecommerce_ops}:${POSTGRES_PASSWORD:-ecommerce_ops_dev}@postgres:5432/${POSTGRES_DB:-ecommerce_ops}
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/1
@@ -71,8 +78,49 @@ services:
     depends_on:
       postgres: {condition: service_healthy}
       redis: {condition: service_healthy}
+      migrate: {condition: service_completed_successfully}
     restart: unless-stopped
+    stop_grace_period: 60s
     mem_limit: 768m
+    security_opt: ["no-new-privileges:true"]
+    tmpfs: ["/tmp"]
+    logging: {driver: json-file, options: {max-size: "10m", max-file: "3"}}
+    networks: [internal]
+
+  migrate:
+    build: ./backend
+    command: ["alembic", "upgrade", "head"]
+    env_file: .env
+    environment:
+      APP_VERSION: ${APP_VERSION:-dev}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-ecommerce_ops}:${POSTGRES_PASSWORD:-ecommerce_ops_dev}@postgres:5432/${POSTGRES_DB:-ecommerce_ops}
+    depends_on:
+      postgres: {condition: service_healthy}
+    restart: "no"
+    mem_limit: 256m
+    security_opt: ["no-new-privileges:true"]
+    tmpfs: ["/tmp"]
+    networks: [internal]
+
+  dispatcher:
+    build: ./backend
+    command: ["python", "-m", "app.dispatcher"]
+    env_file: .env
+    environment:
+      APP_VERSION: ${APP_VERSION:-dev}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-ecommerce_ops}:${POSTGRES_PASSWORD:-ecommerce_ops_dev}@postgres:5432/${POSTGRES_DB:-ecommerce_ops}
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      migrate: {condition: service_completed_successfully}
+    restart: unless-stopped
+    mem_limit: 256m
+    security_opt: ["no-new-privileges:true"]
+    tmpfs: ["/tmp"]
+    logging: {driver: json-file, options: {max-size: "10m", max-file: "3"}}
     networks: [internal]
 
   frontend:
@@ -83,6 +131,8 @@ services:
       backend: {condition: service_healthy}
     restart: unless-stopped
     mem_limit: 128m
+    security_opt: ["no-new-privileges:true"]
+    logging: {driver: json-file, options: {max-size: "10m", max-file: "3"}}
     networks: [internal]
 
 networks:

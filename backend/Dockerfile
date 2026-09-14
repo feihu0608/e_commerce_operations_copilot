@@ -12,7 +12,14 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 COPY app ./app
-RUN mkdir -p /app/storage
+COPY alembic.ini ./alembic.ini
+COPY migrations ./migrations
+RUN groupadd --gid 10001 appuser \
+    && useradd --uid 10001 --gid 10001 --no-create-home --shell /usr/sbin/nologin appuser \
+    && mkdir -p /app/storage \
+    && chown -R appuser:appuser /app
+
+USER appuser
 
 EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

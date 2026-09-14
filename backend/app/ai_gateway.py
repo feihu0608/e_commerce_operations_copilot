@@ -43,6 +43,20 @@ class SiliconFlowGateway:
             return response.json()
 
     async def generate_video(self, prompt: str, on_poll: Callable[[int], None] | None = None) -> dict[str, Any]:
+        request_id = await self.submit_video(prompt)
+        for attempt in range(self.settings.video_max_polls):
+            await asyncio.sleep(self.settings.video_poll_seconds)
+            payload = await self.query_video(request_id)
+            status = str(payload.get("status", "")).lower()
+            if on_poll:
+                on_poll(attempt)
+            if status in {"succeed", "succeeded", "success"}:
+                return payload
+            if status in {"failed", "error"}:
+                raise RuntimeError(payload.get("reason") or "视频生成失败")
+        raise TimeoutError("视频生成超过最大等待时间，请稍后重试")
+
+    async def submit_video(self, prompt: str) -> str:
         if not self.media_enabled:
             raise RuntimeError("Media live mode is not enabled")
         async with httpx.AsyncClient(timeout=90) as client:
@@ -55,20 +69,16 @@ class SiliconFlowGateway:
             request_id = response.json().get("requestId")
             if not request_id:
                 raise RuntimeError("视频服务未返回 requestId")
-            for attempt in range(84):
-                await asyncio.sleep(5)
-                status_response = await client.post(
-                    f"{self.settings.siliconflow_base_url}/video/status",
-                    headers=self._headers(),
-                    json={"requestId": request_id},
-                )
-                status_response.raise_for_status()
-                payload = status_response.json()
-                status = str(payload.get("status", "")).lower()
-                if on_poll:
-                    on_poll(attempt)
-                if status in {"succeed", "succeeded", "success"}:
-                    return payload
-                if status in {"failed", "error"}:
-                    raise RuntimeError(payload.get("reason") or "视频生成失败")
-            raise TimeoutError("视频生成超过 7 分钟，请稍后重试")
+            return request_id
+
+    async def query_video(self, request_id: str) -> dict[str, Any]:
+        if not self.media_enabled:
+            raise RuntimeError("Media live mode is not enabled")
+        async with httpx.AsyncClient(timeout=90) as client:
+            response = await client.post(
+                f"{self.settings.siliconflow_base_url}/video/status",
+                headers=self._headers(),
+                json={"requestId": request_id},
+            )
+            response.raise_for_status()
+            return response.json()

@@ -1,41 +1,80 @@
 # 电商运营助手
 
-本项目采用“Windows 本机开发 + 阿里云 ECS 容器化集成测试与演示”的工作方式。
+面向课程实战、求职作品集和小范围公网演示的准生产级 AI 应用。项目覆盖商品运营、AI 诊断与创意、真实主图/视频生成、素材结果查看、投放方案创建与主管审批、经营指标复盘及表格导入。
 
-## 环境约定
+当前边界：系统生成投放建议并保留人工审批记录，不连接淘宝、京东或抖音广告扣费接口；演示业务数据来自幂等初始化和导入样例。
 
-- Python 依赖统一由 `uv` 和 `backend/uv.lock` 管理。
-- 本机不使用 Docker Desktop。
-- PostgreSQL、Redis、FastAPI、Celery Worker 和前端 Nginx 均在阿里云 ECS 的 Docker Compose 中运行。
-- ECS 项目目录为 `/root/myproject/e_commerce_operations_copilot`，公网入口为 `http://<ECS_PUBLIC_IP>`。
-- 只有前端 Nginx 映射公网端口；PostgreSQL 和 Redis 不开放公网端口。
-- 默认 `AI_MODE=mock`；收到硅基流动 Key 并完成最小调用验证后再切换真实模式。
+## 架构
 
-## 本机后端检查
+- React + TypeScript + Vite 前端，由 Nginx 提供同源入口和限流、安全响应头。
+- FastAPI 模块化单体 API，PostgreSQL 是业务与任务状态事实来源。
+- Redis + Celery Worker 执行 AI 和媒体任务。
+- Transactional Outbox Dispatcher 在数据库提交后可靠投递任务。
+- `task_attempts`、`task_events` 记录执行尝试与时间线，重复消息不会重复执行已领取任务。
+- 文本 AI 输出经过 Pydantic Schema 校验，最多执行一次结构修复。
+- 视频采用 submit/poll 两阶段短任务，不占用 Worker 循环等待。
+- Alembic 管理数据库版本；部署时先迁移，再启动 API、Worker 和 Dispatcher。
+- 审计日志、请求 ID、模型调用元数据、健康与就绪探针支持问题追踪。
+
+完整设计见 [电商运营助手架构设计文档.md](./电商运营助手架构设计文档.md)，准生产升级范围和证据见 [准生产级升级与验收说明.md](./准生产级升级与验收说明.md)。
+
+## 本机开发检查
+
+Python 依赖统一使用 `uv` 和 `backend/uv.lock`：
 
 ```powershell
-Set-Location -LiteralPath 'F:\尚硅谷大模型\项目实战\电商运营助手'
-uv sync --project backend --frozen
-uv run --project backend python -m compileall -q backend/app
+Set-Location -LiteralPath 'F:\尚硅谷大模型\项目实战\电商运营助手\backend'
+$env:UV_CACHE_DIR = '..\.deployment-state\uv-cache'
+uv sync --frozen
+uv run python -m compileall -q app migrations
+uv run pytest -q
+
+Set-Location -LiteralPath '..\frontend'
+pnpm install --frozen-lockfile
+pnpm build
 ```
 
-## 同步并在 ECS 启动
+本机不使用 Docker Desktop。PostgreSQL、Redis、API、Worker、Dispatcher 和 Nginx 的完整集成测试在阿里云 ECS Docker Compose 环境运行。
 
-先在本机执行 `pnpm --dir frontend build` 生成并验证 `frontend/dist`。前端镜像只将此静态产物装入 Nginx，避免 ECS 构建时访问 npm 仓库。代码提交到 GitHub 后，在 ECS 的独立目录拉取，在服务器中创建真实 `.env` 并执行 `chmod 600 .env`。随后运行：
+## ECS 启动和更新
+
+项目位于 `/root/myproject/e_commerce_operations_copilot`，真实 `.env` 仅保存在服务器且权限应为 `600`。
 
 ```bash
 cd /root/myproject/e_commerce_operations_copilot
 ./manage.sh config
+./manage.sh prepare
 ./manage.sh start
-./manage.sh status
-curl -fsS http://127.0.0.1/api/health
+./manage.sh doctor
 ```
 
-以后发布新版本：
+日常更新会先备份数据库，再拉取、构建、迁移和重启：
 
 ```bash
-cd /root/myproject/e_commerce_operations_copilot
 ./manage.sh update
 ```
 
-常用启停命令及安全注意事项见 [阿里云ECS环境配置与项目启停说明.md](./阿里云ECS环境配置与项目启停说明.md)。
+常用命令：
+
+```bash
+./manage.sh status
+./manage.sh logs backend
+./manage.sh logs worker
+./manage.sh logs dispatcher
+./manage.sh backup
+./manage.sh migrate
+./manage.sh restart
+./manage.sh pause
+./manage.sh stop
+```
+
+详细运维步骤见 [阿里云ECS环境配置与项目启停说明.md](./阿里云ECS环境配置与项目启停说明.md)。
+
+## API 运行状态
+
+- `GET /api/health`：进程和数据库存活状态、AI/媒体模式、部署版本。
+- `GET /api/ready`：数据库与 Redis 就绪状态；容器健康检查使用该接口。
+- `GET /api/tasks/{id}/events`：任务状态时间线。
+- `GET /api/audit-logs`：主管查看关键操作审计记录。
+
+图片和视频真实生成会产生模型费用。Mock 结果与 live 结果始终通过 `provider_mode` 区分，Mock 通过不能替代真实供应商验收。

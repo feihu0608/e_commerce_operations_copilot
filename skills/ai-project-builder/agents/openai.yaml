@@ -1,0 +1,6 @@
+interface:
+  display_name: "AI Project Builder"
+  short_description: "从需求澄清到真实部署验收的完整 AI 项目构建工作流"
+  default_prompt: "使用 $ai-project-builder 分析并实现这个 AI 项目，先通过 Grill Me 补齐关键需求，再完成开发、自测和真实链路验收。"
+policy:
+  allow_implicit_invocation: true

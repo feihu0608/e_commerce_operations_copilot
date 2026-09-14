@@ -8,7 +8,7 @@ from pathlib import Path
 import secrets
 from typing import Any
 
-from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from openpyxl import load_workbook
@@ -17,10 +17,11 @@ from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from .config import get_settings
-from .database import Base, SessionLocal, engine, get_db
-from .models import Competitor, ContentDocument, Experiment, GenerationTask, MetricRecord, PasswordReset, Product, User, utcnow
+from .database import SessionLocal, get_db
+from .models import AuditLog, Competitor, ContentDocument, Experiment, GenerationTask, MetricRecord, PasswordReset, Product, TaskAttempt, TaskEvent, User, utcnow
+from .observability import RequestContextMiddleware, current_request_id
 from .security import create_access_token, get_current_user, hash_password, require_manager, verify_password
-from .tasks import generate_content, generate_media
+from .task_runtime import create_generation_task, record_audit, record_event
 
 
 class LoginInput(BaseModel):
@@ -114,6 +115,7 @@ def serialize_task(task: GenerationTask):
         "id": task.id, "product_id": task.product_id, "kind": task.kind, "title": task.title,
         "status": task.status, "progress": task.progress, "provider_mode": task.provider_mode,
         "error_message": task.error_message, "result_url": task.result_url,
+        "request_id": task.request_id, "version": task.version, "retry_of_task_id": task.retry_of_task_id,
         "created_at": task.created_at, "updated_at": task.updated_at,
     }
 
@@ -122,6 +124,9 @@ def serialize_experiment(item: Experiment):
     return {
         "id": item.id, "product_id": item.product_id, "title": item.title, "status": item.status,
         "strategy": item.strategy, "decision_note": item.decision_note,
+        "created_by_id": item.created_by_id, "submitted_at": item.submitted_at,
+        "reviewer_id": item.reviewer_id, "reviewed_at": item.reviewed_at,
+        "created_at": item.created_at, "updated_at": item.updated_at,
     }
 
 
@@ -154,16 +159,16 @@ def seed_users(db: Session):
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     Path(get_settings().storage_dir).mkdir(parents=True, exist_ok=True)
-    Base.metadata.create_all(engine)
     with SessionLocal() as db:
         seed_users(db)
     yield
 
 
 app = FastAPI(title="电商运营助手 API", version="1.0.0", lifespan=lifespan)
+app.add_middleware(RequestContextMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=get_settings().cors_origin_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -175,7 +180,21 @@ app.mount("/storage", StaticFiles(directory=get_settings().storage_dir, check_di
 def health(db: Session = Depends(get_db)):
     db.execute(text("SELECT 1"))
     cfg = get_settings()
-    return {"status": "ok", "database": "ok", "ai_mode": cfg.ai_mode, "media_mode": cfg.media_mode}
+    return {"status": "ok", "database": "ok", "ai_mode": cfg.ai_mode, "media_mode": cfg.media_mode, "version": cfg.app_version}
+
+
+@app.get("/api/ready")
+def ready(db: Session = Depends(get_db)):
+    from redis import Redis
+
+    db.execute(text("SELECT 1"))
+    client = Redis.from_url(get_settings().redis_url, socket_connect_timeout=2, socket_timeout=2)
+    try:
+        if not client.ping():
+            raise RuntimeError("redis ping failed")
+    finally:
+        client.close()
+    return {"status": "ready", "database": "ok", "redis": "ok"}
 
 
 @app.post("/api/auth/login")
@@ -226,6 +245,14 @@ def reset_password(body: ResetInput, db: Session = Depends(get_db)):
 @app.get("/api/auth/me")
 def me(user: User = Depends(get_current_user)):
     return serialize_user(user)
+
+
+@app.post("/api/auth/logout")
+def logout(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    user.token_version += 1
+    record_audit(db, "auth.logout", "user", user.id, user.id)
+    db.commit()
+    return {"status": "logged_out"}
 
 
 @app.get("/api/dashboard")
@@ -283,22 +310,35 @@ def product_detail(product_id: int, _: User = Depends(get_current_user), db: Ses
     }
 
 
-def enqueue(db: Session, product_id: int, kind: str, title: str) -> GenerationTask:
-    if not db.get(Product, product_id):
-        raise HTTPException(status_code=404, detail="商品不存在")
+def enqueue(
+    db: Session,
+    product_id: int,
+    kind: str,
+    title: str,
+    actor_id: int | None = None,
+    idempotency_key: str | None = None,
+    retry_of_task_id: int | None = None,
+) -> GenerationTask:
     cfg = get_settings()
     provider_mode = cfg.ai_mode if kind in ("diagnosis", "creative") else cfg.media_mode
-    task = GenerationTask(product_id=product_id, kind=kind, title=title, provider_mode=provider_mode)
-    db.add(task)
-    db.commit()
-    db.refresh(task)
-    (generate_content.delay(task.id, kind) if kind in ("diagnosis", "creative") else generate_media.delay(task.id))
-    return task
+    try:
+        task, _ = create_generation_task(
+            db, product_id, kind, title, provider_mode, actor_id, idempotency_key, retry_of_task_id
+        )
+        return task
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @app.post("/api/products/{product_id}/generate", status_code=202)
-def generate(product_id: int, body: TaskInput, _: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    return serialize_task(enqueue(db, product_id, body.kind, body.title))
+def generate(
+    product_id: int,
+    body: TaskInput,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+):
+    return serialize_task(enqueue(db, product_id, body.kind, body.title, user.id, idempotency_key))
 
 
 @app.get("/api/tasks")
@@ -319,14 +359,7 @@ def task_result(task_id: int, _: User = Depends(get_current_user), db: Session =
     product = db.get(Product, task.product_id)
     content = None
     if task.kind in ("diagnosis", "creative"):
-        item = db.scalar(
-            select(ContentDocument)
-            .where(
-                ContentDocument.product_id == task.product_id,
-                ContentDocument.content_type == task.kind,
-            )
-            .order_by(ContentDocument.id.desc())
-        )
+        item = db.scalar(select(ContentDocument).where(ContentDocument.task_id == task.id))
         if item:
             content = {
                 "id": item.id,
@@ -344,25 +377,41 @@ def task_result(task_id: int, _: User = Depends(get_current_user), db: Session =
 
 
 @app.post("/api/tasks/{task_id}/cancel")
-def cancel_task(task_id: int, _: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def cancel_task(task_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     task = db.get(GenerationTask, task_id)
     if not task:
         raise HTTPException(status_code=404, detail="任务不存在")
     if task.status in ("succeeded", "failed", "timeout", "cancelled"):
         raise HTTPException(status_code=409, detail="终态任务不能取消")
     task.status, task.progress = "cancelled", 100
+    task.version += 1
+    attempt = db.scalar(select(TaskAttempt).where(TaskAttempt.task_id == task.id, TaskAttempt.status == "running"))
+    if attempt:
+        attempt.status = "cancelled"
+        attempt.error_code = "CANCEL_REQUESTED"
+        attempt.finished_at = utcnow()
+    record_event(db, task.id, "cancelled", actor_id=user.id)
+    record_audit(db, "generation_task.cancel", "generation_task", task.id, user.id)
     db.commit()
     return serialize_task(task)
 
 
 @app.post("/api/tasks/{task_id}/retry", status_code=202)
-def retry_task(task_id: int, _: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def retry_task(task_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     old = db.get(GenerationTask, task_id)
     if not old:
         raise HTTPException(status_code=404, detail="任务不存在")
     if old.status not in ("failed", "timeout", "cancelled"):
         raise HTTPException(status_code=409, detail="当前状态不能重试")
-    return serialize_task(enqueue(db, old.product_id, old.kind, f"{old.title} 重试"))
+    return serialize_task(enqueue(db, old.product_id, old.kind, f"{old.title} 重试", user.id, retry_of_task_id=old.id))
+
+
+@app.get("/api/tasks/{task_id}/events")
+def task_events(task_id: int, _: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not db.get(GenerationTask, task_id):
+        raise HTTPException(status_code=404, detail="任务不存在")
+    events = db.scalars(select(TaskEvent).where(TaskEvent.task_id == task_id).order_by(TaskEvent.id)).all()
+    return [{"id": item.id, "type": item.event_type, "payload": item.payload, "created_at": item.created_at} for item in events]
 
 
 @app.patch("/api/contents/{content_id}")
@@ -392,13 +441,14 @@ def experiments(_: User = Depends(get_current_user), db: Session = Depends(get_d
 
 
 @app.post("/api/experiments", status_code=201)
-def create_experiment(body: ExperimentInput, _: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def create_experiment(body: ExperimentInput, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if not db.get(Product, body.product_id):
         raise HTTPException(status_code=404, detail="商品不存在")
     item = Experiment(
         product_id=body.product_id,
         title=body.title,
         status="draft",
+        created_by_id=getattr(user, "id", None),
         strategy={
             "audience": body.audience,
             "channel": body.channel,
@@ -409,19 +459,23 @@ def create_experiment(body: ExperimentInput, _: User = Depends(get_current_user)
         },
     )
     db.add(item)
+    db.flush()
+    record_audit(db, "experiment.create", "experiment", item.id, getattr(user, "id", None))
     db.commit()
     db.refresh(item)
     return serialize_experiment(item)
 
 
 @app.post("/api/experiments/{experiment_id}/submit")
-def submit_experiment(experiment_id: int, _: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def submit_experiment(experiment_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     item = db.get(Experiment, experiment_id)
     if not item:
         raise HTTPException(status_code=404, detail="投放方案不存在")
     if item.status != "draft":
         raise HTTPException(status_code=409, detail="只有草稿方案可以提交审批")
     item.status = "submitted"
+    item.submitted_at = utcnow()
+    record_audit(db, "experiment.submit", "experiment", item.id, getattr(user, "id", None))
     db.commit()
     return serialize_experiment(item)
 
@@ -437,6 +491,7 @@ def decide(experiment_id: int, body: DecisionInput, manager: User = Depends(requ
     item.decision_note = body.note
     item.reviewer_id = manager.id
     item.reviewed_at = utcnow()
+    record_audit(db, f"experiment.{body.decision}", "experiment", item.id, manager.id, note=body.note)
     db.commit()
     return {"id": item.id, "status": item.status, "decision_note": item.decision_note}
 
@@ -626,4 +681,10 @@ def import_commit(file: UploadFile = File(...), _: User = Depends(get_current_us
 @app.get("/api/settings")
 def settings(_: User = Depends(require_manager)):
     cfg = get_settings()
-    return {"ai_mode": cfg.ai_mode, "media_mode": cfg.media_mode, "base_url": cfg.siliconflow_base_url, "api_key_configured": bool(cfg.siliconflow_api_key), "models": {"text": cfg.text_model, "analysis": cfg.analysis_model, "image": cfg.image_model, "video_i2v": cfg.video_i2v_model, "video_t2v": cfg.video_t2v_model, "vision": cfg.vision_model}, "worker_concurrency": 1}
+    return {"ai_mode": cfg.ai_mode, "media_mode": cfg.media_mode, "base_url": cfg.siliconflow_base_url, "api_key_configured": bool(cfg.siliconflow_api_key), "models": {"text": cfg.text_model, "analysis": cfg.analysis_model, "image": cfg.image_model, "video_i2v": cfg.video_i2v_model, "video_t2v": cfg.video_t2v_model, "vision": cfg.vision_model}, "worker_concurrency": 1, "app_version": cfg.app_version}
+
+
+@app.get("/api/audit-logs")
+def audit_logs(_: User = Depends(require_manager), db: Session = Depends(get_db), limit: int = 100):
+    items = db.scalars(select(AuditLog).order_by(AuditLog.id.desc()).limit(min(max(limit, 1), 500))).all()
+    return [{"id": item.id, "actor_id": item.actor_id, "action": item.action, "resource_type": item.resource_type, "resource_id": item.resource_id, "request_id": item.request_id, "detail": item.detail, "created_at": item.created_at} for item in items]

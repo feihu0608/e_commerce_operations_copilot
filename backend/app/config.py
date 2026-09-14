@@ -1,5 +1,5 @@
 from functools import lru_cache
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 import os
 
 
@@ -24,8 +24,27 @@ class Settings(BaseModel):
     ai_mode: str = os.getenv("AI_MODE", "mock")
     media_mode: str = os.getenv("MEDIA_MODE", "mock")
     storage_dir: str = os.getenv("STORAGE_DIR", "/app/storage")
+    app_version: str = os.getenv("APP_VERSION", "dev")
+    cors_origins: str = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
+    task_lease_seconds: int = int(os.getenv("TASK_LEASE_SECONDS", "120"))
+    outbox_poll_seconds: float = float(os.getenv("OUTBOX_POLL_SECONDS", "2"))
+    media_max_bytes: int = int(os.getenv("MEDIA_MAX_BYTES", str(50 * 1024 * 1024)))
+    video_poll_seconds: int = int(os.getenv("VIDEO_POLL_SECONDS", "5"))
+    video_max_polls: int = int(os.getenv("VIDEO_MAX_POLLS", "84"))
     demo_operator_password: str = os.getenv("DEMO_OPERATOR_PASSWORD", "")
     demo_manager_password: str = os.getenv("DEMO_MANAGER_PASSWORD", "")
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [item.strip() for item in self.cors_origins.split(",") if item.strip()]
+
+    @model_validator(mode="after")
+    def validate_deployment_secrets(self):
+        if self.app_env == "production" and self.app_secret_key == "dev-only-change-me":
+            raise ValueError("APP_SECRET_KEY must be changed in production")
+        if self.ai_mode not in {"mock", "live"} or self.media_mode not in {"mock", "live"}:
+            raise ValueError("AI_MODE and MEDIA_MODE must be mock or live")
+        return self
 
 
 @lru_cache

@@ -11,9 +11,9 @@ SSH：`root@<ECS_PUBLIC_IP>:22`
 
 ## 1 当前状态
 
-服务器基础环境与电商运营助手容器已经配置并实际验证。项目使用 GitHub 仓库管理，工作目录为 `/root/myproject/e_commerce_operations_copilot`。PostgreSQL、Redis、FastAPI、Celery Worker 和前端 Nginx 均由该目录的 Compose 配置管理。
+服务器基础环境与电商运营助手容器已经配置并实际验证。项目使用 GitHub 仓库管理，工作目录为 `/root/myproject/e_commerce_operations_copilot`。PostgreSQL、Redis、Alembic Migrator、FastAPI、Outbox Dispatcher、Celery Worker 和前端 Nginx 均由该目录的 Compose 配置管理。
 
-服务器内部及公网均已验证首页返回 HTTP 200，`/api/health` 返回数据库正常。文本 AI 当前为 `live`，使用硅基流动 `Qwen/Qwen3.6-27B`；图片和视频当前为 `mock`，界面应明确标识。一次性测试账号的注册、登录、3 条演示商品、Celery 异步任务以及一次真实商品诊断均已通过，测试账号随后已删除。Git 仓库中的文档使用 `<ECS_PUBLIC_IP>` 占位，真实地址不提交到公开仓库。
+服务器内部及公网均已验证首页返回 HTTP 200，`/api/health` 返回数据库正常，`/api/ready` 同时验证 PostgreSQL 与 Redis。文本、图片和视频均配置为 `live`；已完成真实诊断、真实图片持久化和真实 MP4 播放验证。Git 仓库中的文档使用 `<ECS_PUBLIC_IP>` 占位，真实地址不提交到公开仓库。
 
 GitHub `main` 与 ECS `origin/main` 已对齐，服务器工作区干净。
 
@@ -37,9 +37,11 @@ GitHub `main` 与 ECS `origin/main` 已对齐，服务器工作区干净。
 | `redis` | Redis 7 Alpine | Celery Broker 与 Result Backend；`PING` 返回 `PONG` |
 | `backend` | Python 3.12、FastAPI、Uvicorn、SQLAlchemy、psycopg | `/api/health` 与登录接口通过，容器健康 |
 | `worker` | Celery 5.5，单 Worker 并发 1 | 已完成一次商品诊断异步任务并写回 PostgreSQL |
+| `dispatcher` | Transactional Outbox Dispatcher | 扫描数据库 Outbox、退避重试投递并恢复过期视频轮询 |
+| `migrate` | Alembic | 一次性迁移服务；成功退出后 API、Worker、Dispatcher 才启动 |
 | `frontend` | Nginx 1.27 Alpine、React 静态产物 | 服务器内部首页返回 HTTP 200，映射主机 80 端口 |
 
-后端镜像通过固定版本的 `uv` 和 `backend/uv.lock` 安装 46 个运行依赖。前端先在本机执行 `pnpm build`，再将 `frontend/dist` 装入 Nginx 镜像，避免 ECS 构建期间依赖 npm 官方仓库连接。
+后端镜像通过固定版本的 `uv` 和 `backend/uv.lock` 安装锁定依赖。前端先在本机执行 `pnpm build`，再将 `frontend/dist` 装入 Nginx 镜像，避免 ECS 构建期间依赖 npm 官方仓库连接。
 
 ## 2 软件与配置记录
 
@@ -193,9 +195,11 @@ cd /root/myproject/e_commerce_operations_copilot
 本机首次准备后端 uv 环境：
 
 ```powershell
-Set-Location -LiteralPath 'F:\尚硅谷大模型\项目实战\电商运营助手'
-uv sync --project backend --frozen
-uv run --project backend python -m compileall -q backend/app
+Set-Location -LiteralPath 'F:\尚硅谷大模型\项目实战\电商运营助手\backend'
+$env:UV_CACHE_DIR = '..\.deployment-state\uv-cache'
+uv sync --frozen
+uv run python -m compileall -q app migrations
+uv run pytest -q
 ```
 
 `uv.lock` 已存在时应使用 `--frozen` 保证安装内容与锁文件一致。新增或升级依赖后，先在 `backend/pyproject.toml` 中修改依赖并运行 `uv lock --project backend`，验证后提交新的 `uv.lock`。
@@ -233,7 +237,7 @@ cd /root/myproject/e_commerce_operations_copilot
 ./manage.sh update
 ```
 
-`update` 会执行 `git pull --ff-only`，随后构建并启动 Compose 服务。更新前应备份数据库，更新后检查 `./manage.sh status` 与 `/api/health`。不要直接在 ECS 修改受 Git 管理的源码，否则后续 `git pull --ff-only` 会因工作区冲突而停止。
+`update` 会先创建 PostgreSQL 格式化备份，再执行 `git pull --ff-only`、构建、Alembic 迁移和 Compose 重启。更新后执行 `./manage.sh doctor`。不要直接在 ECS 修改受 Git 管理的源码，否则后续拉取会因工作区冲突停止。
 
 ## 6 管理脚本
 
@@ -243,7 +247,7 @@ cd /root/myproject/e_commerce_operations_copilot
 /root/myproject/e_commerce_operations_copilot/manage.sh
 ```
 
-仓库根目录包含 `manage.sh`，它根据脚本自身路径定位项目，不依赖固定工作目录；`deployment/manage.sh` 保留为部署副本。
+仓库根目录包含唯一实现的 `manage.sh`；`deployment/manage.sh` 只是兼容入口并转发到根脚本，避免两份运维逻辑漂移。
 
 ### 6.1 首次启动
 
@@ -253,7 +257,9 @@ cd /root/myproject/e_commerce_operations_copilot
 cd /root/myproject/e_commerce_operations_copilot
 ./manage.sh config
 ./manage.sh pull
+./manage.sh prepare
 ./manage.sh start
+./manage.sh doctor
 ```
 
 面向当前公网演示服务器，`.env` 中应设置 `APP_PORT=80`。后端镜像会在构建阶段复制固定版本的 `uv`，并执行 `uv sync --frozen --no-dev --no-install-project`，因此 ECS 宿主机无需额外安装 Python、pip 或 uv。
@@ -272,9 +278,10 @@ cd /root/myproject/e_commerce_operations_copilot
 ```bash
 curl -I http://127.0.0.1/
 curl -fsS http://127.0.0.1/api/health
+curl -fsS http://127.0.0.1/api/ready
 ```
 
-第二个健康检查路径需要后端实际实现 `/api/health`；如果项目使用其他路径，应相应修改。
+`/api/health` 用于存活检查；`/api/ready` 验证 PostgreSQL 和 Redis，Compose 容器健康检查使用就绪接口。
 
 ### 6.3 查看日志
 
@@ -301,6 +308,16 @@ cd /root/myproject/e_commerce_operations_copilot
 ```
 
 脚本会基于当前代码重新构建并启动需要更新的容器；PostgreSQL、Redis 命名数据卷和仓库 `storage` 目录不会删除。
+
+数据库迁移、备份和一键诊断：
+
+```bash
+./manage.sh migrate
+./manage.sh backup
+./manage.sh doctor
+```
+
+备份文件写入项目 `backups` 目录。破坏性迁移不做自动 downgrade；回滚前应先停止写入，并从升级前备份恢复到经过验证的新实例或维护窗口。
 
 ### 6.5 完全关闭项目
 
@@ -347,11 +364,11 @@ http://<ECS_PUBLIC_IP>/api/health
 
 ```env
 AI_MODE=live
-MEDIA_MODE=mock
+MEDIA_MODE=live
 TEXT_MODEL=Qwen/Qwen3.6-27B
 ```
 
-硅基流动密钥只保存在服务器项目目录的 `.env` 中，权限为 `600`。已通过模型列表接口确认密钥授权正常且该文本模型可用，并完成一次真实诊断。图片和视频适配器尚未完成真实异步链路，所以暂不设置为 `live`。
+硅基流动密钥只保存在服务器项目目录的 `.env` 中，权限为 `600`。文本、图片和视频均已完成真实调用；视频使用 submit/poll 短任务并保存供应商任务标识。每次真实图片或视频生成都会产生费用。
 
 登录页支持注册普通运营账号。内置 `operator`、`manager` 账号的密码不写入代码、文档或 Git；如需重新设置，应通过安全的服务器维护流程更新数据库密码哈希，并把新值仅保存在受限的私有密码管理位置。
 
@@ -386,6 +403,7 @@ SSL mode: prefer（当前未单独配置数据库 TLS）
 - PostgreSQL。
 - Redis。
 - 一个 AI 或媒体异步 Worker，初始并发为 1。
+- 一个轻量 Outbox Dispatcher；迁移容器只在发布阶段短暂运行。
 
 图片和视频调用外部服务，不在 ECS 上部署本地大模型或本地视频生成模型。演示阶段不必同时运行 MinIO；少量素材可以放 `/root/myproject/e_commerce_operations_copilot/storage`，正式使用时再接阿里云 OSS。
 
@@ -410,6 +428,7 @@ Compose 中建议设置容器内存上限，避免某个 Worker 占满服务器�
 - Redis 不配置公网 `ports`；PostgreSQL 仅在开发期按需映射 5432，并由安全组限制来源 IP。
 - 数据库和 Redis 使用命名卷或明确的持久化挂载。
 - 每个服务配置健康检查、日志限制和重启策略。
+- API、Worker、Dispatcher 和迁移容器使用 UID 10001 非 root 账户，并启用 `no-new-privileges`；`manage.sh prepare` 负责存储目录权限。
 - 密码和模型密钥从 `.env` 或专用 Secret 注入，不写入镜像。
 - Worker 初始并发设为 1；图片和视频任务可以分队列，但轻量演示不必启动多个 Worker 进程。
 
@@ -465,7 +484,7 @@ passwd
 
 - 尚未配置域名、HTTPS 证书和阿里云 OSS；当前使用公网 IP 的 HTTP 演示入口。
 - 未安装本地 Python、Node.js、PostgreSQL、Redis 或 Nginx；后续统一由 Docker 镜像提供，避免宿主机版本冲突。
-- 未开放 PostgreSQL、Redis 或管理后台端口。
+- Redis 和应用管理端口未开放；PostgreSQL 5432 因本机开发连接需求暂时映射，只应在阿里云安全组中允许固定开发机 IP。
 - 未配置域名、HTTPS 证书和阿里云 OSS。
 - 未执行 56 个系统软件包的全量升级。
 - 已添加 GitHub 项目专用 Deploy Key，并允许该仓库读写；ECS 仓库已经配置为使用 `/root/.ssh/github_ecommerce_ed25519`。尚未更换已经暴露过的 root 密码，也尚未关闭 SSH 密码登录。
