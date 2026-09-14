@@ -13,7 +13,9 @@ SSH：`root@<ECS_PUBLIC_IP>:22`
 
 服务器基础环境与电商运营助手容器已经配置并实际验证。项目使用 GitHub 仓库管理，工作目录为 `/root/myproject/e_commerce_operations_copilot`。PostgreSQL、Redis、FastAPI、Celery Worker 和前端 Nginx 均由该目录的 Compose 配置管理。
 
-服务器内部及公网均已验证首页返回 HTTP 200，`/api/health` 返回数据库正常且当前为 Mock 模式。公网登录、3 条演示商品、大盘数据以及 Celery 商品诊断任务均通过。Git 仓库中的文档使用 `<ECS_PUBLIC_IP>` 占位，真实地址只在私有部署记录中维护。
+服务器内部及公网均已验证首页返回 HTTP 200，`/api/health` 返回数据库正常。文本 AI 当前为 `live`，使用硅基流动 `Qwen/Qwen3.6-27B`；图片和视频当前为 `mock`，界面应明确标识。一次性测试账号的注册、登录、3 条演示商品、Celery 异步任务以及一次真实商品诊断均已通过，测试账号随后已删除。Git 仓库中的文档使用 `<ECS_PUBLIC_IP>` 占位，真实地址不提交到公开仓库。
+
+GitHub `main` 与 ECS `origin/main` 已对齐，服务器工作区干净。
 
 已验证的服务器资源：
 
@@ -126,7 +128,7 @@ UFW 只负责服务器内部防火墙。还需要在阿里云 ECS 控制台的�
     └── storage/
 ```
 
-父目录 `/root/myproject` 只用于容纳多个独立项目，不直接堆放本项目代码。旧的散放文件在新目录验证完成后归档处理。
+父目录 `/root/myproject` 只用于容纳多个独立项目，不直接堆放本项目代码。旧的散放文件已移动到 `/root/myproject/_legacy_ecommerce_root_20260914`，权限为 `700`，作为短期可恢复归档；确认新目录长期稳定并完成独立备份后再删除。
 
 项目仓库内部结构：
 
@@ -198,11 +200,13 @@ uv run --project backend python -m compileall -q backend/app
 
 ### 5.1 第一次上传
 
-先把本机代码推送到 GitHub。然后登录 ECS，在服务器中执行：
+当前代码已经推送到 GitHub。服务器使用项目专用 Deploy Key 克隆，后续也通过该密钥拉取。首次部署等价命令为：
 
 ```bash
 cd /root/myproject
-git clone https://github.com/feihu0608/e_commerce_operations_copilot.git /root/myproject/e_commerce_operations_copilot
+GIT_SSH_COMMAND="ssh -i /root/.ssh/github_ecommerce_ed25519 -o IdentitiesOnly=yes" \
+  git clone git@github.com:feihu0608/e_commerce_operations_copilot.git \
+  /root/myproject/e_commerce_operations_copilot
 ```
 
 如果项目包含 `node_modules`、`.venv`、缓存、测试截图或大量本地素材，先排除这些内容，避免上传依赖和无关文件。生产部署需要上传源码、Dockerfile、`compose.yaml`、迁移文件和必要配置模板。
@@ -211,7 +215,23 @@ git clone https://github.com/feihu0608/e_commerce_operations_copilot.git /root/m
 
 ### 5.2 后续更新
 
-有 Git 仓库时，可在服务器中执行 `git pull`；没有远程仓库时继续用 `scp` 或 `rsync` 上传。更新前先备份数据库，更新后执行配置校验和健康检查。
+日常更新按以下顺序进行：
+
+```powershell
+# 本机项目目录中
+git add -A
+git commit -m "说明本次改动"
+git push origin main
+```
+
+然后登录 ECS：
+
+```bash
+cd /root/myproject/e_commerce_operations_copilot
+./manage.sh update
+```
+
+`update` 会执行 `git pull --ff-only`，随后构建并启动 Compose 服务。更新前应备份数据库，更新后检查 `./manage.sh status` 与 `/api/health`。不要直接在 ECS 修改受 Git 管理的源码，否则后续 `git pull --ff-only` 会因工作区冲突而停止。
 
 ## 6 管理脚本
 
@@ -266,7 +286,7 @@ cd /root/myproject/e_commerce_operations_copilot
 只查看一个服务，例如 API：
 
 ```bash
-./manage.sh logs api
+./manage.sh logs backend
 ```
 
 按 `Ctrl+C` 退出日志查看，不会停止容器。
@@ -278,7 +298,7 @@ cd /root/myproject/e_commerce_operations_copilot
 ./manage.sh restart
 ```
 
-脚本会先移除旧应用容器和应用网络，再按当前 Compose 配置重新创建，命名数据卷和挂载目录不会删除。
+脚本会基于当前代码重新构建并启动需要更新的容器；PostgreSQL、Redis 命名数据卷和仓库 `storage` 目录不会删除。
 
 ### 6.5 完全关闭项目
 
@@ -318,6 +338,20 @@ http://<ECS_PUBLIC_IP>/api/health
 ```
 
 当前仅启用 HTTP。未配置域名和 TLS 证书前不要使用 `https://<ECS_PUBLIC_IP>`。如果 ECS 重新分配公网 IP，应更新私有部署记录，不要把真实地址提交到公开仓库。
+
+### 6.7 AI 模式
+
+当前服务器 `.env` 中的有效模式为：
+
+```env
+AI_MODE=live
+MEDIA_MODE=mock
+TEXT_MODEL=Qwen/Qwen3.6-27B
+```
+
+硅基流动密钥只保存在服务器项目目录的 `.env` 中，权限为 `600`。已通过模型列表接口确认密钥授权正常且该文本模型可用，并完成一次真实诊断。图片和视频适配器尚未完成真实异步链路，所以暂不设置为 `live`。
+
+登录页支持注册普通运营账号。内置 `operator`、`manager` 账号的密码不写入代码、文档或 Git；如需重新设置，应通过安全的服务器维护流程更新数据库密码哈希，并把新值仅保存在受限的私有密码管理位置。
 
 ## 7 2 核 4 GiB 部署约束
 
@@ -410,7 +444,7 @@ passwd
 - 未开放 PostgreSQL、Redis 或管理后台端口。
 - 未配置域名、HTTPS 证书和阿里云 OSS。
 - 未执行 56 个系统软件包的全量升级。
-- 已添加项目专用 SSH 公钥用于自动部署，但尚未更换已经暴露过的 root 密码，也尚未关闭 SSH 密码登录。
+- 已添加 GitHub 项目专用 Deploy Key，并允许该仓库读写；ECS 仓库已经配置为使用 `/root/.ssh/github_ecommerce_ed25519`。尚未更换已经暴露过的 root 密码，也尚未关闭 SSH 密码登录。
 
 阿里云安全组已经放行 HTTP 80。截图中还包含 MySQL 3306、Oracle 1521、SQL Server 1433、PostgreSQL 5432、Redis 6379 和 RDP 3389 等本项目不需要的公网规则，应删除这些规则，只保留 SSH 22、HTTP 80 以及后续真正启用 HTTPS 时的 443。
 
