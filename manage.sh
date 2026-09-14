@@ -41,12 +41,26 @@ architecture_guard() {
   python3 "$PROJECT_DIR/scripts/check_architecture.py"
 }
 
+wait_http() {
+  local url="$1"
+  local attempts="${2:-15}"
+  for ((index=1; index<=attempts; index++)); do
+    if curl -fsS "$url"; then
+      echo
+      return 0
+    fi
+    sleep 2
+  done
+  echo "错误: $url 在等待窗口内未就绪" >&2
+  return 1
+}
+
 case "$command" in
   prepare) prepare_runtime; echo "运行目录已准备" ;;
   start) architecture_guard; prepare_runtime; docker compose up -d --remove-orphans; docker compose ps ;;
   stop) docker compose down --remove-orphans ;;
   pause) docker compose stop ;;
-  restart) architecture_guard; prepare_runtime; docker compose up -d --build --remove-orphans; docker compose ps ;;
+  restart) architecture_guard; prepare_runtime; docker compose up -d --build --remove-orphans; docker compose up -d --force-recreate --no-deps frontend; docker compose ps ;;
   status) docker compose ps -a ;;
   logs)
     if [[ -n "$service" ]]; then docker compose logs --tail=200 -f "$service"
@@ -68,10 +82,8 @@ case "$command" in
     docker compose config -q
     docker compose ps
     docker compose run --rm migrate alembic current
-    curl -fsS http://127.0.0.1/api/health
-    echo
-    curl -fsS http://127.0.0.1/api/ready
-    echo
+    wait_http http://127.0.0.1/api/health
+    wait_http http://127.0.0.1/api/ready
     ;;
   update)
     "$0" backup
@@ -80,6 +92,7 @@ case "$command" in
     architecture_guard
     prepare_runtime
     docker compose up -d --build --remove-orphans
+    docker compose up -d --force-recreate --no-deps frontend
     docker compose ps
     ;;
   config) docker compose config -q; echo "Compose 配置有效" ;;
