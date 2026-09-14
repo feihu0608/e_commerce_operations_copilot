@@ -11,6 +11,7 @@ type Dashboard = { product_count: number; active_rate: number; gmv: number; inve
 type ProductDetail = { product: Product; competitors: Array<{id:number; name:string; price:number; highlights:unknown; highlights_text?:string}>; contents: Array<{id:number; type:string; status:string; revision:number; payload:Record<string, unknown>}>; experiment?: Experiment; metrics?: Metric }
 type Experiment = { id:number; product_id?:number; title:string; status:string; strategy:Record<string, unknown>; decision_note?:string }
 type Metric = { period:string; impressions:number; clicks:number; paid_orders:number; gmv:number; ad_spend:number; ctr:number|null; conversion_rate:number|null; roas:number|null }
+type TaskResult = { task:Task; product:Product|null; content:{id:number;type:string;status:string;revision:number;payload:Record<string,unknown>}|null; result_url:string|null }
 
 const nav: Array<{id:Page; label:string; icon:typeof LayoutDashboard}> = [
   { id:'dashboard', label:'运营大盘', icon:LayoutDashboard },
@@ -87,6 +88,8 @@ export default function App() {
   const [experiments,setExperiments] = useState<Experiment[]>([])
   const [notice,setNotice] = useState('')
   const [loading,setLoading] = useState(false)
+  const [taskResult,setTaskResult] = useState<TaskResult|null>(null)
+  const [resultLoading,setResultLoading] = useState(false)
 
   async function loadBase() {
     setLoading(true)
@@ -105,6 +108,12 @@ export default function App() {
     if(!selected)return; const title={diagnosis:'AI 商品诊断',creative:'主图与短视频创意',image:'电商主图生成',video:'商品短视频生成'}[kind]
     await api(`/api/products/${selected}/generate`,{method:'POST',body:JSON.stringify({kind,title})}); setNotice(`${title}已提交`); setPage('tasks'); await loadBase()
   }
+  async function viewTaskResult(id:number) {
+    setResultLoading(true)
+    try { setTaskResult(await api<TaskResult>(`/api/tasks/${id}/result`)) }
+    catch(e) { setNotice(e instanceof Error?e.message:'结果加载失败') }
+    finally { setResultLoading(false) }
+  }
   function logout(){auth.token='';setUser(null);setDash(null)}
   if(!user) return <Login onLogin={setUser}/>
   const title=nav.find(x=>x.id===page)?.label
@@ -114,12 +123,13 @@ export default function App() {
       {notice&&<div className="toast" onClick={()=>setNotice('')}><CheckCircle2 size={18}/>{notice}</div>}
       {page==='dashboard'&&<DashboardPage data={dash} products={products} onProduct={id=>{selectProduct(id);setPage('products')}}/>}
       {page==='products'&&<ProductsPage products={products} detail={detail} selected={selected} onSelect={selectProduct} onGenerate={generate}/>}
-      {page==='tasks'&&<TasksPage tasks={tasks} onAction={async(id,act)=>{await api(`/api/tasks/${id}/${act}`,{method:'POST'});await loadBase()}}/>}
+      {page==='tasks'&&<TasksPage tasks={tasks} resultLoading={resultLoading} onView={viewTaskResult} onAction={async(id,act)=>{await api(`/api/tasks/${id}/${act}`,{method:'POST'});await loadBase()}}/>}
       {page==='approvals'&&<ApprovalsPage user={user} items={experiments} onDecision={async(id,decision)=>{await api(`/api/experiments/${id}/decision`,{method:'POST',body:JSON.stringify({decision,note:decision==='approved'?'符合小预算测款规则，同意执行':'请补充素材差异化与止损阈值'})});await loadBase()}}/>}
       {page==='review'&&<ReviewPage products={products} selected={selected} onSelect={selectProduct} detail={detail}/>}
       {page==='import'&&<ImportPage/>}
       {page==='settings'&&<SettingsPage manager={user.role==='manager'}/>}
     </main>
+    {taskResult&&<ResultModal result={taskResult} onClose={()=>setTaskResult(null)}/>}
   </div>
 }
 
@@ -137,7 +147,18 @@ function ProductsPage({products,detail,selected,onSelect,onGenerate}:{products:P
 }
 function Action({icon:Icon,title,desc,onClick}:{icon:typeof Sparkles;title:string;desc:string;onClick:()=>void}){return <button className="action-card" onClick={onClick}><span><Icon/></span><div><b>{title}</b><small>{desc}</small></div><Play size={16}/></button>}
 
-function TasksPage({tasks,onAction}:{tasks:Task[];onAction:(id:number,a:'cancel'|'retry')=>void}){return <div className="panel"><div className="panel-head"><div><span>异步工作流</span><h3>最近 50 个生成任务</h3></div><div className="legend"><i className="dot green"/>真实/模拟模式均记录</div></div><div className="task-list">{tasks.map(t=><div className="task-row" key={t.id}><div className={`task-kind ${t.kind}`}>{t.kind==='video'?<Video/>:t.kind==='image'?<Image/>:<Sparkles/>}</div><div className="task-main"><b>{t.title}</b><small>{t.provider_mode==='mock'?'Mock 演示':'真实调用'} · 任务 #{t.id}</small><div className="progress"><span style={{width:`${t.progress}%`}}/></div></div><span className={`status ${t.status}`}>{statusText[t.status]||t.status}</span>{['queued','running'].includes(t.status)&&<button className="text-btn danger" onClick={()=>onAction(t.id,'cancel')}>取消</button>}{['failed','timeout','cancelled'].includes(t.status)&&<button className="text-btn" onClick={()=>onAction(t.id,'retry')}>重试</button>}</div>)}{!tasks.length&&<Empty text="还没有生成任务"/>}</div></div>}
+function TasksPage({tasks,resultLoading,onView,onAction}:{tasks:Task[];resultLoading:boolean;onView:(id:number)=>void;onAction:(id:number,a:'cancel'|'retry')=>void}){return <div className="panel"><div className="panel-head"><div><span>异步工作流</span><h3>最近 50 个生成任务</h3></div><div className="legend"><i className="dot green"/>真实/模拟模式均记录</div></div><div className="task-list">{tasks.map(t=><div className="task-row" key={t.id}><div className={`task-kind ${t.kind}`}>{t.kind==='video'?<Video/>:t.kind==='image'?<Image/>:<Sparkles/>}</div><div className="task-main"><b>{t.title}</b><small>{t.provider_mode==='mock'?'Mock 演示':'真实调用'} · 任务 #{t.id}</small><div className="progress"><span style={{width:`${t.progress}%`}}/></div></div><span className={`status ${t.status}`}>{statusText[t.status]||t.status}</span>{t.status==='succeeded'&&<button className="text-btn" disabled={resultLoading} onClick={()=>onView(t.id)}>查看结果</button>}{['queued','running'].includes(t.status)&&<button className="text-btn danger" onClick={()=>onAction(t.id,'cancel')}>取消</button>}{['failed','timeout','cancelled'].includes(t.status)&&<button className="text-btn" onClick={()=>onAction(t.id,'retry')}>重试</button>}</div>)}{!tasks.length&&<Empty text="还没有生成任务"/>}</div></div>}
+
+const resultLabels:Record<string,string>={target_audience:'目标人群',price_analysis:'价格分析',selling_points:'核心卖点',conversion_barriers:'转化障碍',actions:'建议行动',image_directions:'主图创意方向',video_scripts:'短视频脚本',title:'标题',layout:'画面布局',copy:'文案',selling_point:'核心卖点',hook:'开场钩子',shots:'镜头设计',voiceover:'口播文案',cta:'行动引导'}
+function ResultValue({value}:{value:unknown}) {
+  if(Array.isArray(value)) return <div className="result-list">{value.map((item,index)=><div key={index} className="result-list-item"><ResultValue value={item}/></div>)}</div>
+  if(value&&typeof value==='object') return <div className="result-object">{Object.entries(value).map(([key,item])=><section key={key}><h4>{resultLabels[key]||key}</h4><ResultValue value={item}/></section>)}</div>
+  return <p>{value==null?'—':String(value)}</p>
+}
+function ResultModal({result,onClose}:{result:TaskResult;onClose:()=>void}) {
+  const isVideo=result.task.kind==='video'&&Boolean(result.result_url?.match(/\.(mp4|webm)(\?|$)/i))
+  return <div className="result-overlay" role="presentation" onMouseDown={e=>{if(e.currentTarget===e.target)onClose()}}><article className="result-modal" role="dialog" aria-modal="true" aria-label="生成结果"><div className="result-head"><div><span>{result.task.provider_mode==='mock'?'Mock 演示结果':'真实模型结果'}</span><h2>{result.task.title}</h2><p>{result.product?.name||`商品 #${result.task.product_id}`} · 任务 #{result.task.id}</p></div><button className="icon-btn" onClick={onClose} title="关闭"><XCircle size={20}/></button></div><div className="result-content">{result.content?<ResultValue value={result.content.payload}/>:result.result_url?<div className="media-result">{isVideo?<video src={result.result_url} controls/>:<img src={result.result_url} alt={result.task.title}/>}<a href={result.result_url} target="_blank" rel="noreferrer">在新窗口打开素材</a>{result.task.kind==='video'&&!isVideo&&<small>当前视频任务为 Mock，占位素材用于验证结果链路。</small>}</div>:<Empty text="该任务没有可展示的结果"/>}</div></article></div>
+}
 
 function ApprovalsPage({user,items,onDecision}:{user:User;items:Experiment[];onDecision:(id:number,d:'approved'|'rejected')=>void}){return <div className="approval-grid">{items.map(x=><article className="approval-card" key={x.id}><div className="approval-top"><span className={`status ${x.status}`}>{statusText[x.status]||x.status}</span><small>方案 #{x.id}</small></div><h3>{x.title}</h3><p>AI 建议以小预算分组测款，比较夜景影像、长续航和服务保障三类素材方向。</p><div className="strategy"><div><span>测试预算</span><b>¥300 / 组</b></div><div><span>目标 CTR</span><b>≥ 3.2%</b></div><div><span>止损条件</span><b>ROAS &lt; 1.5</b></div></div>{x.decision_note&&<div className="decision-note">审批意见：{x.decision_note}</div>}{x.status==='submitted'&&user.role==='manager'?<div className="approve-actions"><button className="outline danger" onClick={()=>onDecision(x.id,'rejected')}><XCircle size={17}/>驳回</button><button className="primary" onClick={()=>onDecision(x.id,'approved')}><CheckCircle2 size={17}/>确认通过</button></div>:x.status==='submitted'?<div className="role-tip"><ShieldCheck/>已提交，等待运营主管审批</div>:null}</article>)}{!items.length&&<div className="panel"><Empty text="暂无投放方案"/></div>}</div>}
 

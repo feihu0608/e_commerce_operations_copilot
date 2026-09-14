@@ -278,6 +278,40 @@ def list_tasks(product_id: int | None = None, _: User = Depends(get_current_user
     return [serialize_task(t) for t in db.scalars(query).all()]
 
 
+@app.get("/api/tasks/{task_id}/result")
+def task_result(task_id: int, _: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    task = db.get(GenerationTask, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="任务不存在")
+    if task.status != "succeeded":
+        raise HTTPException(status_code=409, detail="任务尚未生成成功")
+    product = db.get(Product, task.product_id)
+    content = None
+    if task.kind in ("diagnosis", "creative"):
+        item = db.scalar(
+            select(ContentDocument)
+            .where(
+                ContentDocument.product_id == task.product_id,
+                ContentDocument.content_type == task.kind,
+            )
+            .order_by(ContentDocument.id.desc())
+        )
+        if item:
+            content = {
+                "id": item.id,
+                "type": item.content_type,
+                "status": item.status,
+                "revision": item.revision,
+                "payload": item.payload,
+            }
+    return {
+        "task": serialize_task(task),
+        "product": None if not product else serialize_product(product),
+        "content": content,
+        "result_url": task.result_url,
+    }
+
+
 @app.post("/api/tasks/{task_id}/cancel")
 def cancel_task(task_id: int, _: User = Depends(get_current_user), db: Session = Depends(get_db)):
     task = db.get(GenerationTask, task_id)
