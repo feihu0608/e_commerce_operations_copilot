@@ -1,0 +1,1687 @@
+<!doctype html>
+<html lang="en" data-visualize-standalone>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src 'unsafe-inline' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>电商运营助手产品原型</title>
+<style>:root{color-scheme:light dark;background:light-dark(rgb(255 255 255), rgb(24 24 24))}html,body{margin:0}body{box-sizing:border-box;padding:1rem;background:inherit}iframe{display:block;width:100%;height:calc(100vh - 2rem);margin:0 auto;border:0}</style>
+</head>
+<body>
+<iframe sandbox="allow-scripts" referrerpolicy="no-referrer" title="电商运营助手产品原型" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-visualize-standalone&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;referrer&quot; content=&quot;no-referrer&quot;&gt;
+&lt;meta http-equiv=&quot;Content-Security-Policy&quot; content=&quot;default-src &#x27;none&#x27;; script-src &#x27;unsafe-inline&#x27; &#x27;unsafe-eval&#x27; &#x27;wasm-unsafe-eval&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src &#x27;unsafe-inline&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src &#x27;none&#x27;; object-src &#x27;none&#x27;; base-uri &#x27;none&#x27;; form-action &#x27;none&#x27;&quot;&gt;
+&lt;title&gt;电商运营助手产品原型&lt;/title&gt;
+&lt;style&gt;:root {
+  color-scheme: light dark;
+  background-color: var(
+    --background,
+    var(--color-background-primary, light-dark(rgb(255 255 255), rgb(24 24 24)))
+  ) !important;
+
+  /* Agent-facing contract; keep in sync with SKILL.md. */
+  --background: var(
+    --color-background-primary,
+    light-dark(rgb(255 255 255), rgb(24 24 24))
+  );
+  --foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --card: color-mix(in oklab, var(--foreground) 5%, var(--background));
+  --card-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --popover: var(
+    --color-background-secondary,
+    light-dark(rgb(255 255 255), rgb(45 45 45))
+  );
+  --popover-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --primary: var(
+    --color-text-info,
+    light-dark(rgb(51 156 255), rgb(131 195 255))
+  );
+  --primary-foreground: var(
+    --color-text-inverse,
+    light-dark(rgb(255 255 255), rgb(13 13 13))
+  );
+  --secondary: var(
+    --color-background-secondary,
+    light-dark(rgb(255 255 255 / 96%), rgb(54 54 54 / 96%))
+  );
+  --secondary-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --muted: color-mix(in srgb, var(--foreground) 10%, transparent);
+  --muted-foreground: var(
+    --color-text-secondary,
+    light-dark(rgb(26 28 31 / 49.4%), rgb(255 255 255 / 49.8%))
+  );
+  --accent: var(
+    --color-background-info,
+    light-dark(rgb(229 242 255), rgb(13 39 63))
+  );
+  --accent-foreground: var(
+    --color-text-info,
+    light-dark(rgb(51 156 255), rgb(131 195 255))
+  );
+  --destructive: var(
+    --color-text-warning,
+    light-dark(rgb(226 85 7), rgb(255 133 73))
+  );
+  --border: var(
+    --color-border-secondary,
+    light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%))
+  );
+  --input: var(
+    --color-border-primary,
+    light-dark(
+      rgb(26 28 31 / 11.8%),
+      color-mix(in oklab, rgb(0 0 0) 10%, transparent)
+    )
+  );
+  --ring: var(
+    --color-ring-primary,
+    light-dark(rgb(51 156 255), rgb(131 195 255 / 76%))
+  );
+  --font-size-base: var(--font-text-md-size, 14px);
+  --blue: light-dark(rgb(51 156 255), rgb(51 156 255));
+  --orange: light-dark(rgb(226 85 7), rgb(251 106 34));
+  --green: light-dark(rgb(0 162 64), rgb(64 201 119));
+  --red: light-dark(rgb(224 46 42), rgb(255 103 100));
+  --purple: light-dark(rgb(146 79 247), rgb(173 123 249));
+  --yellow: light-dark(rgb(255 195 0), rgb(255 210 64));
+  --viz-series-1: var(--primary);
+  --viz-series-2: light-dark(rgb(243 136 59), rgb(245 154 86));
+  --viz-series-3: light-dark(rgb(93 201 119), rgb(116 213 139));
+  --viz-series-4: light-dark(rgb(235 119 177), rgb(240 143 192));
+  --viz-series-5: light-dark(rgb(155 121 236), rgb(170 145 239));
+  --viz-series-6: light-dark(rgb(58 185 177), rgb(90 203 194));
+
+  /* Internal implementation variables; not part of the agent contract. */
+  --font-sans: -apple-system, system-ui, &quot;Segoe UI&quot;, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;,
+    monospace;
+  --font-size-normal: max(11px, var(--font-size-base));
+  --font-size-tooltip: calc(var(--font-size-base) - 1px);
+  --font-size-small: max(11px, calc(var(--font-size-base) - 2px));
+  --font-size-h1: calc(var(--font-size-normal) * 1.7142857143);
+  --font-size-h2: calc(var(--font-size-normal) * 1.4285714286);
+  --font-size-h3: calc(var(--font-size-normal) * 1.2857142857);
+  --font-weight-normal: 430;
+  --font-weight-medium: 500;
+  --icon-size: 16px;
+  --line-height-normal: calc(var(--font-size-normal) * 1.5);
+  --line-height-tooltip: calc(var(--font-size-tooltip) * 1.4285714286);
+  --line-height-small: calc(var(--font-size-small) + 4px);
+  --corner-shape: round;
+  --radius: var(--border-radius-lg, 10px);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-2xl: calc(var(--radius) * 1.6);
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px -1px rgb(0 0 0 / 8%);
+  --checkmark-image: url(&quot;data:image/svg+xml,%3Csvg xmlns=&#x27;http://www.w3.org/2000/svg&#x27; viewBox=&#x27;0 0 17 17&#x27;%3E%3Cpath d=&#x27;M12.8961 3.64101C13.1297 3.41418 13.4984 3.37523 13.7779 3.56581C14.0571 3.75635 14.1554 4.11331 14.0299 4.41347L13.9615 4.53847L7.71151 13.7045C7.59411 13.8767 7.4063 13.9877 7.19881 14.0072C6.99136 14.0267 6.78564 13.9533 6.63826 13.806L2.88826 10.056L2.79842 9.9457C2.6192 9.67407 2.64927 9.30496 2.88826 9.06581C3.12738 8.82669 3.49647 8.79676 3.76815 8.97597L3.8785 9.06581L7.03084 12.2182L12.8053 3.74941L12.8961 3.64101Z&#x27;/%3E%3C/svg%3E&quot;);
+
+  /* Legacy aliases; not part of the current agent contract. */
+  --viz-bg: transparent;
+  --viz-panel: var(--card);
+  --viz-border: var(--border);
+  --viz-text: var(--foreground);
+  --viz-muted: var(--muted-foreground);
+  --viz-accent: var(--primary);
+  --viz-accent-text: var(--primary-foreground);
+  --viz-accent-bg: var(--accent);
+  --viz-font-size: var(--font-size-base);
+  --viz-warning: var(--destructive);
+}
+
+:root[data-theme=&quot;light&quot;] {
+  color-scheme: light;
+}
+
+:root[data-theme=&quot;dark&quot;] {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html &gt; body {
+  /* Preserve MCP aliases for older inline renderers without creating :root cycles. */
+  --color-background-primary: var(
+    --background,
+    light-dark(rgb(255 255 255), rgb(24 24 24))
+  );
+  --color-text-primary: var(
+    --foreground,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --color-border-secondary: var(
+    --border,
+    light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%))
+  );
+
+  margin: 0;
+  padding: var(--visualize-paint-gutter, 0px);
+  color: var(--foreground);
+  background: transparent !important;
+  font-family: var(--font-sans) !important;
+  font-size: var(--font-size-normal);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-normal);
+}
+
+a {
+  color: color-mix(in srgb, var(--viz-accent) 80%, var(--viz-text) 20%);
+  cursor: pointer;
+  font-weight: var(--font-weight-medium, 500);
+  text-decoration: none;
+  text-underline-offset: 2px;
+}
+
+a:is(:hover, :focus-visible) {
+  text-decoration-line: underline;
+  text-decoration-style: dashed;
+  text-decoration-thickness: 0.5px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin-block: 0;
+}
+
+h1 {
+  font-size: var(--font-size-h1);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h2 {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h3,
+h4,
+h5,
+h6 {
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.3;
+}
+
+b,
+strong,
+th {
+  font-weight: var(--font-weight-medium);
+}
+
+code:not(pre code) {
+  display: inline;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  corner-shape: var(--corner-shape);
+  background: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  word-break: break-word;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--foreground);
+  font: inherit;
+  text-align: start;
+}
+
+.table :is(th, td) {
+  padding-block: 10px;
+  padding-inline: 0 24px;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--border);
+  text-align: start;
+  vertical-align: top;
+}
+
+.table-responsive &gt; .table :is(th, td) {
+  overflow-wrap: break-word;
+}
+
+.table :is(th, td):last-child {
+  padding-inline-end: 0;
+}
+
+.table :is(caption, thead th) {
+  font-weight: 600;
+}
+
+.table thead th {
+  padding-block: 8px;
+  border-bottom-color: color-mix(in srgb, var(--foreground) 16%, transparent);
+}
+
+.table tbody tr:last-child :is(th, td) {
+  border-bottom: 0;
+}
+
+.table.table-sm :is(th, td) {
+  padding-block: 6px;
+}
+
+.table.table-sm :is(th, td):not(:last-child) {
+  padding-inline-end: 16px;
+}
+
+.table :is(.text-end, [align=&quot;right&quot;]) {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.table :is(.text-center, [align=&quot;center&quot;]) {
+  text-align: center;
+}
+
+.table .text-nowrap {
+  white-space: nowrap;
+}
+
+#widget {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  background: transparent !important;
+}
+
+.card {
+  min-width: 0;
+  padding: 12px;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  border-radius: var(--radius-2xl);
+  corner-shape: var(--corner-shape);
+  color: var(--card-foreground);
+  background: var(--card);
+}
+
+#widget &gt; :not(.card, .progress) {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 50;
+  top: 0;
+  left: 0;
+  width: max-content;
+  max-width: min(
+    20rem,
+    var(--tooltip-available-width, calc(100vw - 10px)),
+    calc(100vw - 10px)
+  );
+  max-height: min(
+    var(--tooltip-available-height, calc(100vh - 10px)),
+    calc(100vh - 10px)
+  );
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  color: var(--popover-foreground);
+  background: var(--popover);
+  box-shadow: none;
+  font-size: var(--font-size-tooltip);
+  line-height: var(--line-height-tooltip);
+  overflow-wrap: break-word;
+  white-space: normal;
+  pointer-events: none;
+  user-select: none;
+}
+
+.viz-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(max(180px, 24%), 1fr));
+  gap: 10px;
+}
+
+.viz-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.viz-stat-value {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+.viz-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+hr {
+  width: 100%;
+  height: 1px;
+  margin-block: 6px;
+  border: 0;
+  background: var(--border);
+}
+
+.nav {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+}
+
+.progress {
+  display: flex;
+  height: 8px;
+  margin-block: calc((var(--line-height-normal, 1.5em) - 8px) / 2);
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+}
+
+.progress-bar:only-child {
+  border-radius: var(--radius-full);
+}
+
+.progress-bar {
+  height: 100%;
+  flex-shrink: 0;
+  border: 0;
+  background: var(--viz-series-1);
+}
+
+.viz-badge {
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  color: var(--accent-foreground);
+  background: var(--accent);
+  font-weight: var(--font-weight-medium);
+}
+
+small,
+.text-small,
+.viz-badge {
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-small);
+}
+
+.text-muted {
+  color: var(--muted-foreground);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.viz-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.viz-controls &gt; .form-label {
+  display: grid;
+  min-width: min(100%, 260px);
+  flex: 1 1 280px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 2px 12px;
+  margin-bottom: 0;
+}
+
+.viz-controls &gt; .form-label &gt; :is(.form-control, .form-range, .form-select) {
+  grid-column: 1 / -1;
+}
+
+.btn,
+.nav-link,
+.form-check-input,
+.form-control,
+.form-range,
+.form-select {
+  font: inherit;
+}
+
+.btn,
+.nav-link {
+  appearance: button;
+  display: inline-flex;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0 8px;
+  -webkit-app-region: no-drag;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: var(--cursor-interaction, pointer);
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.btn:is(.btn-block, .viz-tile) {
+  inline-size: 100%;
+}
+
+.btn.viz-tile {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+a.btn {
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn:not(:disabled):hover,
+.nav-link:not(:disabled):not([aria-disabled=&quot;true&quot;]):hover {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.btn-primary {
+  border-color: transparent;
+  color: var(--primary-foreground);
+  background: var(--foreground);
+  background-clip: padding-box;
+}
+
+.btn-primary .text-muted {
+  color: color-mix(in srgb, var(--primary-foreground) 50%, transparent);
+}
+
+.btn-primary:not(:disabled):hover {
+  background: color-mix(in srgb, var(--foreground) 80%, transparent);
+  background-clip: padding-box;
+}
+
+.btn-ghost {
+  border-color: transparent;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.btn-ghost:not(:disabled):hover {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.nav-pills .nav-link {
+  min-width: 0;
+  border-color: transparent;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.nav-justified .nav-link {
+  flex: 1 1 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.nav-pills .nav-link.active {
+  color: var(--foreground);
+  background: var(--muted);
+}
+
+.btn:disabled,
+.nav-link:disabled,
+.nav-link[aria-disabled=&quot;true&quot;] {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+[data-lucide] {
+  stroke-width: 1.6;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--foreground);
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  padding: 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  color: var(--foreground);
+  background: var(--secondary);
+}
+
+.form-control::placeholder {
+  color: var(--muted-foreground);
+}
+
+.form-control[type=&quot;file&quot;] {
+  padding: 0;
+  overflow: hidden;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control[type=&quot;file&quot;]::file-selector-button {
+  min-height: 26px;
+  margin-right: 8px;
+  padding: 0 8px;
+  border: 0;
+  border-right: 1px solid var(--input);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: inherit;
+  font: inherit;
+}
+
+.form-control[type=&quot;file&quot;]:not(:disabled):hover::file-selector-button {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-control-color[type=&quot;color&quot;] {
+  width: 40px;
+  height: 28px;
+  padding: 3px;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch {
+  border: 0;
+  border-radius: calc(var(--radius-lg) - 4px);
+  corner-shape: var(--corner-shape);
+}
+
+textarea.form-control {
+  height: auto;
+  min-height: 72px;
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.form-control:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-control:disabled,
+.form-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.form-select {
+  appearance: none;
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  margin: 0;
+  padding: 0 32px 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  color: var(--foreground);
+  background-color: var(--secondary);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted-foreground) 50%),
+    linear-gradient(135deg, var(--muted-foreground) 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) 50%,
+    calc(100% - 10px) 50%;
+  background-repeat: no-repeat;
+  background-size: 4px 4px;
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-select:not(:disabled):hover {
+  background-color: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-select:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-check {
+  display: flex;
+  min-height: 20px;
+  align-items: center;
+  gap: 6px;
+}
+
+.form-check-input {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  margin: 0;
+  border: 1px solid var(--input);
+  color: var(--primary-foreground);
+  background-color: transparent;
+  cursor: var(--cursor-interaction, default);
+  transition:
+    background-color 150ms,
+    border-color 150ms,
+    box-shadow 150ms;
+}
+
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;] {
+  border-color: var(--input);
+  border-radius: var(--radius-sm);
+  corner-shape: var(--corner-shape);
+  background-color: var(--secondary);
+  box-shadow: var(--shadow-sm);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input:not(:disabled):not(:checked):hover {
+  background-color: var(--card);
+}
+
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;]:checked {
+  border-color: var(--primary);
+  background-color: var(--primary);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input[type=&quot;checkbox&quot;]:checked::before {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--primary-foreground);
+  content: &quot;&quot;;
+  mask: var(--checkmark-image) center / 12px 12px no-repeat;
+}
+
+.form-check-input[type=&quot;radio&quot;] {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-full);
+}
+
+.form-check-input[type=&quot;radio&quot;]:checked {
+  border: 2px solid var(--primary);
+  background:
+    radial-gradient(circle, var(--primary-foreground) 0 2.5px, transparent 3px),
+    var(--primary);
+}
+
+.form-check:not(.form-switch) .form-check-input:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+}
+
+.form-switch .form-check-input:disabled,
+.form-switch .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.form-check-label {
+  color: var(--foreground);
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-switch .form-check-input {
+  position: relative;
+  width: 32px;
+  height: 20px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+  box-shadow: none;
+  transition: background-color 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  border: 1px solid light-dark(var(--primary-foreground), var(--foreground));
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+  box-shadow: var(--shadow-sm);
+  content: &quot;&quot;;
+  transform: translate(2px, -50%);
+  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input:checked {
+  background: var(--primary);
+}
+
+.form-switch .form-check-input:checked::before {
+  transform: translate(14px, -50%);
+}
+
+.form-switch .form-check-input:focus-visible {
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.form-range {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 28px;
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  outline: none;
+  border: 0;
+  accent-color: var(--primary);
+  background: linear-gradient(
+      color-mix(in srgb, var(--foreground) 7%, transparent),
+      color-mix(in srgb, var(--foreground) 7%, transparent)
+    )
+    center / 100% 2px no-repeat;
+}
+
+.form-range::-webkit-slider-runnable-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-webkit-slider-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range::-moz-range-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-moz-range-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.btn:not(.btn-primary, .viz-tile):is(
+  [aria-pressed=&quot;true&quot;],
+  [aria-selected=&quot;true&quot;],
+  .is-selected
+) {
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+.btn.viz-tile:is([aria-pressed=&quot;true&quot;], [aria-selected=&quot;true&quot;], .is-selected) {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.btn:focus-visible,
+.nav-link:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@media (pointer: coarse) {
+  .btn,
+  .nav-link,
+  .form-control,
+  .form-select {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Keep small-screen WebKit from zooming when a text field receives focus. */
+  .form-control,
+  .form-select {
+    font-size: max(16px, var(--font-size-normal));
+  }
+
+  .form-control[type=&quot;file&quot;]::file-selector-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .form-control-color[type=&quot;color&quot;] {
+    width: 44px;
+    height: 44px;
+  }
+
+  .form-control:is(
+    [type=&quot;date&quot;],
+    [type=&quot;datetime-local&quot;],
+    [type=&quot;month&quot;],
+    [type=&quot;time&quot;],
+    [type=&quot;week&quot;]
+  ) {
+    min-width: 0;
+    max-width: 100%;
+    padding-block: 8px;
+  }
+
+  .form-check {
+    min-height: 44px;
+    padding-inline: 15px;
+  }
+
+  .form-check-input {
+    position: relative;
+  }
+
+  .form-check-input::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    content: &quot;&quot;;
+    transform: translate(-50%, -50%);
+  }
+
+  .form-check-label {
+    display: inline-flex;
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+  }
+
+  .form-range {
+    height: 44px;
+    touch-action: pan-y;
+  }
+
+  .form-range::-webkit-slider-runnable-track {
+    height: 44px;
+  }
+
+  .form-range::-moz-range-track {
+    height: 44px;
+  }
+
+  .form-range::-webkit-slider-thumb {
+    margin-top: 12px;
+  }
+}
+
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+#widget &gt; svg {
+  width: 100%;
+}
+
+/* Model-authored chart rules can otherwise stretch icons after these styles load. */
+svg.lucide {
+  display: block;
+  width: var(--icon-size) !important;
+  height: var(--icon-size) !important;
+  flex: none;
+  margin: 0 !important;
+  stroke-width: 1.6;
+}
+
+.text-warning,
+.text-destructive {
+  color: var(--destructive);
+}
+
+html&gt;body{padding:0}&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div id=&quot;ecom-ops-prototype&quot; aria-label=&quot;电商运营助手产品原型&quot;&gt;
+  &lt;style&gt;
+    #ecom-ops-prototype {
+      --ea-bg: light-dark(#f4f7fb, #0b1220);
+      --ea-shell: light-dark(#ffffff, #111a2b);
+      --ea-side: light-dark(#17223b, #080e1a);
+      --ea-side-text: light-dark(#d8e1f0, #c7d2e5);
+      --ea-text: light-dark(#182235, #e7edf7);
+      --ea-muted: light-dark(#69758a, #9ba8bb);
+      --ea-line: light-dark(#e2e8f0, #283449);
+      --ea-soft: light-dark(#eef3ff, #192742);
+      --ea-surface: light-dark(#ffffff, #131e31);
+      --ea-accent: #4f67d8;
+      --ea-accent-text: #ffffff;
+      --ea-good: light-dark(#167c55, #68d4a8);
+      --ea-warn: light-dark(#a45d00, #f1b96a);
+      --ea-bad: light-dark(#b13a45, #f38b94);
+      --ea-radius: 12px;
+      color: var(--ea-text);
+      font-family: Inter, &quot;Microsoft YaHei&quot;, system-ui, sans-serif;
+      background: transparent;
+      width: 100%;
+    }
+    #ecom-ops-prototype * { box-sizing: border-box; }
+    #ecom-ops-prototype button,
+    #ecom-ops-prototype input,
+    #ecom-ops-prototype select,
+    #ecom-ops-prototype textarea { font: inherit; }
+    #ecom-ops-prototype .ea-window {
+      display: grid;
+      grid-template-columns: 214px minmax(0, 1fr);
+      min-height: 740px;
+      background: var(--ea-shell);
+      border: 1px solid var(--ea-line);
+      border-radius: var(--ea-radius);
+      overflow: hidden;
+      box-shadow: 0 18px 60px light-dark(rgba(27, 39, 67, .12), rgba(0, 0, 0, .34));
+    }
+    #ecom-ops-prototype .ea-sidebar { background: var(--ea-side); color: var(--ea-side-text); padding: 20px 14px; }
+    #ecom-ops-prototype .ea-brand { display: flex; align-items: center; gap: 10px; padding: 0 8px 22px; font-weight: 500; color: #ffffff; }
+    #ecom-ops-prototype .ea-logo { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 9px; background: var(--ea-accent); color: var(--ea-accent-text); }
+    #ecom-ops-prototype .ea-nav-label { margin: 12px 9px 7px; color: light-dark(#8fa0bc, #8796ad); font-size: 12px; }
+    #ecom-ops-prototype .ea-nav { display: grid; gap: 4px; }
+    #ecom-ops-prototype .ea-nav button { min-height: 40px; border: 0; border-radius: 9px; background: transparent; color: inherit; display: flex; align-items: center; gap: 10px; padding: 8px 10px; cursor: pointer; text-align: left; }
+    #ecom-ops-prototype .ea-nav button:hover { background: light-dark(rgba(255,255,255,.08), rgba(255,255,255,.07)); }
+    #ecom-ops-prototype .ea-nav button[aria-current=&quot;page&quot;] { background: light-dark(rgba(109,133,244,.25), rgba(87,110,218,.28)); color: #ffffff; }
+    #ecom-ops-prototype .ea-nav svg,
+    #ecom-ops-prototype .ea-brand svg,
+    #ecom-ops-prototype .ea-action svg { width: 17px; height: 17px; }
+    #ecom-ops-prototype .ea-side-foot { margin-top: 28px; padding: 14px 10px; border-top: 1px solid light-dark(rgba(255,255,255,.12), rgba(255,255,255,.09)); color: light-dark(#a9b7cc, #9cabc1); font-size: 12px; line-height: 1.6; }
+    #ecom-ops-prototype .ea-main { min-width: 0; background: var(--ea-bg); }
+    #ecom-ops-prototype .ea-topbar { height: 64px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; gap: 14px; background: var(--ea-surface); border-bottom: 1px solid var(--ea-line); }
+    #ecom-ops-prototype .ea-top-title { font-weight: 500; }
+    #ecom-ops-prototype .ea-top-actions { display: flex; align-items: center; gap: 10px; }
+    #ecom-ops-prototype .ea-search { min-width: 235px; height: 36px; border: 1px solid var(--ea-line); border-radius: 9px; padding: 0 12px; background: var(--ea-bg); color: var(--ea-text); }
+    #ecom-ops-prototype .ea-avatar { width: 34px; height: 34px; border-radius: 50%; border: 0; background: var(--ea-soft); color: var(--ea-accent); cursor: pointer; }
+    #ecom-ops-prototype .ea-page { display: none; padding: 22px 24px 30px; }
+    #ecom-ops-prototype .ea-page.is-active { display: block; }
+    #ecom-ops-prototype .ea-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; margin-bottom: 18px; }
+    #ecom-ops-prototype h1,
+    #ecom-ops-prototype h2,
+    #ecom-ops-prototype h3,
+    #ecom-ops-prototype p { margin: 0; }
+    #ecom-ops-prototype h1 { font-size: 22px; line-height: 1.35; font-weight: 500; }
+    #ecom-ops-prototype h2 { font-size: 16px; line-height: 1.4; font-weight: 500; }
+    #ecom-ops-prototype h3 { font-size: 14px; line-height: 1.4; font-weight: 500; }
+    #ecom-ops-prototype .ea-sub { color: var(--ea-muted); margin-top: 5px; font-size: 13px; }
+    #ecom-ops-prototype .ea-button { border: 1px solid var(--ea-line); background: var(--ea-surface); color: var(--ea-text); border-radius: 9px; min-height: 36px; padding: 7px 13px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+    #ecom-ops-prototype .ea-button:hover { border-color: var(--ea-accent); }
+    #ecom-ops-prototype .ea-button.ea-primary { background: var(--ea-accent); border-color: var(--ea-accent); color: var(--ea-accent-text); }
+    #ecom-ops-prototype .ea-button.ea-danger { color: var(--ea-bad); }
+    #ecom-ops-prototype .ea-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    #ecom-ops-prototype .ea-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+    #ecom-ops-prototype .ea-metric,
+    #ecom-ops-prototype .ea-panel { background: var(--ea-surface); border: 1px solid var(--ea-line); border-radius: var(--ea-radius); }
+    #ecom-ops-prototype .ea-metric { padding: 16px; }
+    #ecom-ops-prototype .ea-metric-label { color: var(--ea-muted); font-size: 12px; }
+    #ecom-ops-prototype .ea-metric-value { font-size: 24px; margin-top: 7px; font-variant-numeric: tabular-nums; }
+    #ecom-ops-prototype .ea-delta { font-size: 12px; margin-top: 5px; color: var(--ea-good); }
+    #ecom-ops-prototype .ea-warn-text { color: var(--ea-warn); }
+    #ecom-ops-prototype .ea-grid-2 { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(280px, .8fr); gap: 14px; }
+    #ecom-ops-prototype .ea-panel-head { padding: 15px 17px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border-bottom: 1px solid var(--ea-line); }
+    #ecom-ops-prototype .ea-panel-body { padding: 16px 17px; }
+    #ecom-ops-prototype .ea-chart { height: 190px; display: flex; align-items: flex-end; gap: 8px; padding-top: 20px; border-bottom: 1px solid var(--ea-line); }
+    #ecom-ops-prototype .ea-bar { flex: 1; min-width: 16px; border-radius: 5px 5px 0 0; background: color-mix(in srgb, var(--ea-accent) 72%, transparent); position: relative; }
+    #ecom-ops-prototype .ea-bar span { position: absolute; bottom: -24px; left: 50%; transform: translateX(-50%); color: var(--ea-muted); font-size: 11px; white-space: nowrap; }
+    #ecom-ops-prototype .ea-list { display: grid; gap: 11px; }
+    #ecom-ops-prototype .ea-list-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding-bottom: 11px; border-bottom: 1px solid var(--ea-line); }
+    #ecom-ops-prototype .ea-list-row:last-child { border: 0; padding-bottom: 0; }
+    #ecom-ops-prototype .ea-small { color: var(--ea-muted); font-size: 12px; margin-top: 3px; }
+    #ecom-ops-prototype .ea-pill { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 4px 8px; background: var(--ea-soft); color: var(--ea-accent); font-size: 12px; white-space: nowrap; }
+    #ecom-ops-prototype .ea-pill.good { color: var(--ea-good); }
+    #ecom-ops-prototype .ea-pill.warn { color: var(--ea-warn); }
+    #ecom-ops-prototype .ea-product-strip { background: var(--ea-surface); border: 1px solid var(--ea-line); border-radius: var(--ea-radius); padding: 14px 16px; display: flex; align-items: center; gap: 14px; margin-bottom: 13px; }
+    #ecom-ops-prototype .ea-product-img { width: 52px; height: 52px; border-radius: 11px; display: grid; place-items: center; background: linear-gradient(135deg, color-mix(in srgb, var(--ea-accent) 18%, var(--ea-surface)), color-mix(in srgb, var(--ea-good) 18%, var(--ea-surface))); color: var(--ea-accent); }
+    #ecom-ops-prototype .ea-product-img svg { width: 26px; height: 26px; }
+    #ecom-ops-prototype .ea-product-meta { flex: 1; min-width: 0; }
+    #ecom-ops-prototype .ea-flow { display: grid; grid-template-columns: repeat(7, minmax(75px, 1fr)); gap: 4px; margin: 12px 0 15px; }
+    #ecom-ops-prototype .ea-step { position: relative; padding: 9px 5px; text-align: center; font-size: 12px; border-bottom: 3px solid var(--ea-line); color: var(--ea-muted); }
+    #ecom-ops-prototype .ea-step.is-done { border-color: var(--ea-good); color: var(--ea-good); }
+    #ecom-ops-prototype .ea-step.is-now { border-color: var(--ea-accent); color: var(--ea-accent); font-weight: 500; }
+    #ecom-ops-prototype .ea-tabs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; }
+    #ecom-ops-prototype .ea-tab { border: 0; background: transparent; color: var(--ea-muted); border-bottom: 2px solid transparent; padding: 9px 12px; cursor: pointer; }
+    #ecom-ops-prototype .ea-tab[aria-selected=&quot;true&quot;] { color: var(--ea-accent); border-bottom-color: var(--ea-accent); }
+    #ecom-ops-prototype .ea-work-panel { display: none; }
+    #ecom-ops-prototype .ea-work-panel.is-active { display: block; }
+    #ecom-ops-prototype .ea-triple { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 11px; }
+    #ecom-ops-prototype .ea-idea { padding: 14px; background: var(--ea-surface); border: 1px solid var(--ea-line); border-radius: var(--ea-radius); }
+    #ecom-ops-prototype .ea-idea.is-selected { border-color: var(--ea-accent); box-shadow: inset 0 0 0 1px var(--ea-accent); }
+    #ecom-ops-prototype .ea-visual { height: 92px; border-radius: 9px; margin-bottom: 11px; display: grid; place-items: center; color: var(--ea-accent); background: var(--ea-soft); }
+    #ecom-ops-prototype .ea-visual svg { width: 32px; height: 32px; }
+    #ecom-ops-prototype .ea-idea p { color: var(--ea-muted); font-size: 12px; line-height: 1.65; margin: 7px 0 11px; }
+    #ecom-ops-prototype .ea-inline { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    #ecom-ops-prototype .ea-progress { height: 7px; border-radius: 99px; overflow: hidden; background: var(--ea-line); margin-top: 9px; }
+    #ecom-ops-prototype .ea-progress &gt; div { height: 100%; border-radius: inherit; background: var(--ea-accent); }
+    #ecom-ops-prototype .ea-table-wrap { overflow-x: auto; }
+    #ecom-ops-prototype table { width: 100%; border-collapse: collapse; min-width: 650px; }
+    #ecom-ops-prototype th,
+    #ecom-ops-prototype td { text-align: left; padding: 11px 10px; border-bottom: 1px solid var(--ea-line); font-size: 13px; }
+    #ecom-ops-prototype th { color: var(--ea-muted); font-size: 12px; font-weight: 500; }
+    #ecom-ops-prototype .ea-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
+    #ecom-ops-prototype label { color: var(--ea-muted); font-size: 12px; display: grid; gap: 6px; }
+    #ecom-ops-prototype .ea-input { min-height: 38px; width: 100%; border: 1px solid var(--ea-line); border-radius: 8px; padding: 8px 10px; background: var(--ea-bg); color: var(--ea-text); }
+    #ecom-ops-prototype textarea.ea-input { min-height: 92px; resize: vertical; }
+    #ecom-ops-prototype .ea-drop { border: 1px dashed var(--ea-accent); border-radius: var(--ea-radius); padding: 34px 18px; text-align: center; background: color-mix(in srgb, var(--ea-accent) 5%, var(--ea-surface)); }
+    #ecom-ops-prototype .ea-drop svg { width: 30px; height: 30px; color: var(--ea-accent); margin-bottom: 8px; }
+    #ecom-ops-prototype .ea-toast { display: none; position: absolute; right: 20px; top: 72px; z-index: 5; padding: 11px 14px; border-radius: 9px; color: var(--ea-accent-text); background: var(--ea-accent); box-shadow: 0 8px 30px light-dark(rgba(29,38,66,.22), rgba(0,0,0,.42)); }
+    #ecom-ops-prototype .ea-toast.is-on { display: block; }
+    #ecom-ops-prototype .ea-main { position: relative; }
+    @media (max-width: 820px) {
+      #ecom-ops-prototype .ea-window { grid-template-columns: 74px minmax(0,1fr); }
+      #ecom-ops-prototype .ea-brand span,
+      #ecom-ops-prototype .ea-nav span,
+      #ecom-ops-prototype .ea-nav-label,
+      #ecom-ops-prototype .ea-side-foot { display: none; }
+      #ecom-ops-prototype .ea-nav button { justify-content: center; }
+      #ecom-ops-prototype .ea-metrics { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      #ecom-ops-prototype .ea-grid-2,
+      #ecom-ops-prototype .ea-triple { grid-template-columns: 1fr; }
+      #ecom-ops-prototype .ea-search { min-width: 0; width: 160px; }
+      #ecom-ops-prototype .ea-flow { grid-template-columns: repeat(4, 1fr); }
+    }
+    @media (max-width: 520px) {
+      #ecom-ops-prototype .ea-window { grid-template-columns: 1fr; }
+      #ecom-ops-prototype .ea-sidebar { padding: 10px; }
+      #ecom-ops-prototype .ea-brand { padding-bottom: 8px; }
+      #ecom-ops-prototype .ea-nav { grid-template-columns: repeat(6, 1fr); }
+      #ecom-ops-prototype .ea-nav button { min-width: 0; padding: 8px 4px; }
+      #ecom-ops-prototype .ea-topbar { padding: 0 14px; }
+      #ecom-ops-prototype .ea-search { display: none; }
+      #ecom-ops-prototype .ea-page { padding: 16px 14px 24px; }
+      #ecom-ops-prototype .ea-metrics,
+      #ecom-ops-prototype .ea-form-grid { grid-template-columns: 1fr; }
+      #ecom-ops-prototype .ea-flow { grid-template-columns: repeat(2, 1fr); }
+      #ecom-ops-prototype .ea-product-strip { align-items: flex-start; flex-wrap: wrap; }
+    }
+  &lt;/style&gt;
+
+  &lt;div class=&quot;ea-window&quot;&gt;
+    &lt;aside class=&quot;ea-sidebar&quot;&gt;
+      &lt;div class=&quot;ea-brand&quot;&gt;&lt;span class=&quot;ea-logo&quot;&gt;&lt;i data-lucide=&quot;sparkles&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;/span&gt;&lt;span&gt;电商运营助手&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;ea-nav-label&quot;&gt;运营中心&lt;/div&gt;
+      &lt;nav class=&quot;ea-nav&quot; aria-label=&quot;主导航&quot;&gt;
+        &lt;button type=&quot;button&quot; data-page=&quot;dashboard&quot; aria-current=&quot;page&quot;&gt;&lt;i data-lucide=&quot;layout-dashboard&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;span&gt;运营大盘&lt;/span&gt;&lt;/button&gt;
+        &lt;button type=&quot;button&quot; data-page=&quot;workbench&quot;&gt;&lt;i data-lucide=&quot;package-search&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;span&gt;商品工作台&lt;/span&gt;&lt;/button&gt;
+        &lt;button type=&quot;button&quot; data-page=&quot;assets&quot;&gt;&lt;i data-lucide=&quot;images&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;span&gt;素材任务&lt;/span&gt;&lt;/button&gt;
+        &lt;button type=&quot;button&quot; data-page=&quot;review&quot;&gt;&lt;i data-lucide=&quot;chart-no-axes-combined&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;span&gt;投放复盘&lt;/span&gt;&lt;/button&gt;
+        &lt;button type=&quot;button&quot; data-page=&quot;imports&quot;&gt;&lt;i data-lucide=&quot;file-up&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;span&gt;导入中心&lt;/span&gt;&lt;/button&gt;
+        &lt;button type=&quot;button&quot; data-page=&quot;settings&quot;&gt;&lt;i data-lucide=&quot;settings&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;span&gt;系统配置&lt;/span&gt;&lt;/button&gt;
+      &lt;/nav&gt;
+      &lt;div class=&quot;ea-side-foot&quot;&gt;云朵服饰旗舰店&lt;br&gt;主管账号 · 华南运营组&lt;/div&gt;
+    &lt;/aside&gt;
+
+    &lt;main class=&quot;ea-main&quot;&gt;
+      &lt;header class=&quot;ea-topbar&quot;&gt;
+        &lt;div class=&quot;ea-top-title&quot; id=&quot;ea-top-title&quot;&gt;运营大盘&lt;/div&gt;
+        &lt;div class=&quot;ea-top-actions&quot;&gt;
+          &lt;input class=&quot;ea-search&quot; type=&quot;search&quot; aria-label=&quot;搜索商品&quot; placeholder=&quot;搜索商品 / SKU / 竞品&quot;&gt;
+          &lt;button class=&quot;ea-avatar&quot; type=&quot;button&quot; aria-label=&quot;账户菜单&quot;&gt;林&lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/header&gt;
+      &lt;div class=&quot;ea-toast&quot; role=&quot;status&quot; aria-live=&quot;polite&quot;&gt;操作已完成&lt;/div&gt;
+
+      &lt;section class=&quot;ea-page is-active&quot; data-page-panel=&quot;dashboard&quot; aria-labelledby=&quot;dash-title&quot;&gt;
+        &lt;div class=&quot;ea-head&quot;&gt;
+          &lt;div&gt;&lt;h1 id=&quot;dash-title&quot;&gt;下午好，林主管&lt;/h1&gt;&lt;p class=&quot;ea-sub&quot;&gt;今天有 2 个素材任务需要处理，1 个投放方案待审核&lt;/p&gt;&lt;/div&gt;
+          &lt;div class=&quot;ea-actions&quot;&gt;&lt;button class=&quot;ea-button&quot; type=&quot;button&quot; data-go=&quot;imports&quot;&gt;&lt;i data-lucide=&quot;upload&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;批量导入&lt;/button&gt;&lt;button class=&quot;ea-button ea-primary&quot; type=&quot;button&quot; data-go=&quot;workbench&quot;&gt;&lt;i data-lucide=&quot;plus&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;新建商品&lt;/button&gt;&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;ea-metrics&quot;&gt;
+          &lt;div class=&quot;ea-metric&quot;&gt;&lt;div class=&quot;ea-metric-label&quot;&gt;商品总数&lt;/div&gt;&lt;div class=&quot;ea-metric-value&quot;&gt;128&lt;/div&gt;&lt;div class=&quot;ea-delta&quot;&gt;本月新增 12&lt;/div&gt;&lt;/div&gt;
+          &lt;div class=&quot;ea-metric&quot;&gt;&lt;div class=&quot;ea-metric-label&quot;&gt;在售动销率&lt;/div&gt;&lt;div class=&quot;ea-metric-value&quot;&gt;76.4%&lt;/div&gt;&lt;div class=&quot;ea-delta&quot;&gt;较上周 +3.2%&lt;/div&gt;&lt;/div&gt;
+          &lt;div class=&quot;ea-metric&quot;&gt;&lt;div class=&quot;ea-metric-label&quot;&gt;近 7 日 GMV&lt;/div&gt;&lt;div class=&quot;ea-metric-value&quot;&gt;¥84.6万&lt;/div&gt;&lt;div class=&quot;ea-delta&quot;&gt;较前 7 日 +8.7%&lt;/div&gt;&lt;/div&gt;
+          &lt;div class=&quot;ea-metric&quot;&gt;&lt;div class=&quot;ea-metric-label&quot;&gt;库存预警&lt;/div&gt;&lt;div class=&quot;ea-metric-value&quot;&gt;7&lt;/div&gt;&lt;div class=&quot;ea-delta ea-warn-text&quot;&gt;2 项高风险&lt;/div&gt;&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;ea-grid-2&quot;&gt;
+          &lt;div class=&quot;ea-panel&quot;&gt;&lt;div class=&quot;ea-panel-head&quot;&gt;&lt;h2&gt;近 7 日经营趋势&lt;/h2&gt;&lt;span class=&quot;ea-pill good&quot;&gt;GMV +8.7%&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;ea-panel-body&quot;&gt;&lt;div class=&quot;ea-chart&quot; role=&quot;img&quot; aria-label=&quot;七天 GMV 柱状趋势&quot;&gt;&lt;div class=&quot;ea-bar&quot; style=&quot;height:45%&quot;&gt;&lt;span&gt;周六&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;ea-bar&quot; style=&quot;height:60%&quot;&gt;&lt;span&gt;周日&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;ea-bar&quot; style=&quot;height:52%&quot;&gt;&lt;span&gt;周一&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;ea-bar&quot; style=&quot;height:68%&quot;&gt;&lt;span&gt;周二&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;ea-bar&quot; style=&quot;height:58%&quot;&gt;&lt;span&gt;周三&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;ea-bar&quot; style=&quot;height:78%&quot;&gt;&lt;span&gt;周四&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;ea-bar&quot; style=&quot;height:92%&quot;&gt;&lt;span&gt;周五&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;
+          &lt;div class=&quot;ea-panel&quot;&gt;&lt;div class=&quot;ea-panel-head&quot;&gt;&lt;h2&gt;待办事项&lt;/h2&gt;&lt;span class=&quot;ea-pill&quot;&gt;4 项&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;ea-panel-body&quot;&gt;&lt;div class=&quot;ea-list&quot;&gt;&lt;div class=&quot;ea-list-row&quot;&gt;&lt;div&gt;&lt;h3&gt;防晒衣投放建议&lt;/h3&gt;&lt;div class=&quot;ea-small&quot;&gt;等待主管审核 · 20 分钟前&lt;/div&gt;&lt;/div&gt;&lt;button class=&quot;ea-button&quot; type=&quot;button&quot; data-go=&quot;review&quot;&gt;处理&lt;/button&gt;&lt;/div&gt;&lt;div class=&quot;ea-list-row&quot;&gt;&lt;div&gt;&lt;h3&gt;模特视频生成失败&lt;/h3&gt;&lt;div class=&quot;ea-small&quot;&gt;供应商限流 · 可重试&lt;/div&gt;&lt;/div&gt;&lt;button class=&quot;ea-button&quot; type=&quot;button&quot; data-go=&quot;assets&quot;&gt;查看&lt;/button&gt;&lt;/div&gt;&lt;div class=&quot;ea-list-row&quot;&gt;&lt;div&gt;&lt;h3&gt;无线充库存偏低&lt;/h3&gt;&lt;div class=&quot;ea-small&quot;&gt;黑色款剩余 18 件&lt;/div&gt;&lt;/div&gt;&lt;span class=&quot;ea-pill warn&quot;&gt;库存预警&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/section&gt;
+
+      &lt;section class=&quot;ea-page&quot; data-page-panel=&quot;workbench&quot; aria-labelledby=&quot;work-title&quot;&gt;
+        &lt;div class=&quot;ea-head&quot;&gt;&lt;div&gt;&lt;h1 id=&quot;work-title&quot;&gt;商品智能运营工作台&lt;/h1&gt;&lt;p class=&quot;ea-sub&quot;&gt;围绕单品完成诊断、创意、素材、投放与复盘&lt;/p&gt;&lt;/div&gt;&lt;button class=&quot;ea-button&quot; type=&quot;button&quot;&gt;&lt;i data-lucide=&quot;history&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;历史轮次&lt;/button&gt;&lt;/div&gt;
+        &lt;div class=&quot;ea-product-strip&quot;&gt;&lt;div class=&quot;ea-product-img&quot;&gt;&lt;i data-lucide=&quot;shirt&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;/div&gt;&lt;div class=&quot;ea-product-meta&quot;&gt;&lt;h2&gt;冰氧凉感防晒衣 2026 夏季款&lt;/h2&gt;&lt;p class=&quot;ea-sub&quot;&gt;女装 / 户外防晒 · 主推 SKU：云雾白 M · ¥169&lt;/p&gt;&lt;/div&gt;&lt;span class=&quot;ea-pill good&quot;&gt;第 1 轮运营中&lt;/span&gt;&lt;button class=&quot;ea-button&quot; type=&quot;button&quot;&gt;切换商品&lt;/button&gt;&lt;/div&gt;
+        &lt;div class=&quot;ea-flow&quot; aria-label=&quot;运营流程进度&quot;&gt;&lt;div class=&quot;ea-step is-done&quot;&gt;商品建档&lt;/div&gt;&lt;div class=&quot;ea-step is-done&quot;&gt;智能诊断&lt;/div&gt;&lt;div class=&quot;ea-step is-now&quot;&gt;创意方案&lt;/div&gt;&lt;div class=&quot;ea-step&quot;&gt;素材制作&lt;/div&gt;&lt;div class=&quot;ea-step&quot;&gt;投放审核&lt;/div&gt;&lt;div class=&quot;ea-step&quot;&gt;数据回填&lt;/div&gt;&lt;div class=&quot;ea-step&quot;&gt;经营复盘&lt;/div&gt;&lt;/div&gt;
+        &lt;div class=&quot;ea-tabs&quot; role=&quot;tablist&quot; aria-label=&quot;商品工作台区域&quot;&gt;&lt;button class=&quot;ea-tab&quot; type=&quot;button&quot; role=&quot;tab&quot; aria-selected=&quot;false&quot; data-work-tab=&quot;diagnosis&quot;&gt;商品诊断&lt;/button&gt;&lt;button class=&quot;ea-tab&quot; type=&quot;button&quot; role=&quot;tab&quot; aria-selected=&quot;true&quot; data-work-tab=&quot;creative&quot;&gt;创意工场&lt;/button&gt;&lt;button class=&quot;ea-tab&quot; type=&quot;button&quot; role=&quot;tab&quot; aria-selected=&quot;false&quot; data-work-tab=&quot;tasks&quot;&gt;生成任务&lt;/button&gt;&lt;/div&gt;
+        &lt;div class=&quot;ea-work-panel&quot; data-work-panel=&quot;diagnosis&quot;&gt;&lt;div class=&quot;ea-grid-2&quot;&gt;&lt;div class=&quot;ea-panel&quot;&gt;&lt;div class=&quot;ea-panel-head&quot;&gt;&lt;h2&gt;AI 商品诊断&lt;/h2&gt;&lt;span class=&quot;ea-pill good&quot;&gt;已确认 V2&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;ea-panel-body&quot;&gt;&lt;div class=&quot;ea-list&quot;&gt;&lt;div&gt;&lt;h3&gt;目标客群&lt;/h3&gt;&lt;p class=&quot;ea-small&quot;&gt;22–35 岁通勤与轻户外女性，关注轻薄、透气与防晒效果。&lt;/p&gt;&lt;/div&gt;&lt;div&gt;&lt;h3&gt;核心卖点矩阵&lt;/h3&gt;&lt;p class=&quot;ea-small&quot;&gt;凉感面料 / UPF50+ / 腋下透气结构 / 110g 轻量收纳。&lt;/p&gt;&lt;/div&gt;&lt;div&gt;&lt;h3&gt;转化卡点&lt;/h3&gt;&lt;p class=&quot;ea-small&quot;&gt;详情页缺少面料近景和透气测试，价格比低价竞品高 18%。&lt;/p&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&quot;ea-panel&quot;&gt;&lt;div class=&quot;ea-panel-head&quot;&gt;&lt;h2&gt;竞品对标&lt;/h2&gt;&lt;/div&gt;&lt;div class=&quot;ea-panel-body&quot;&gt;&lt;div class=&quot;ea-list&quot;&gt;&lt;div class=&quot;ea-list-row&quot;&gt;&lt;span&gt;北野防晒衣&lt;/span&gt;&lt;strong&gt;¥139&lt;/strong&gt;&lt;/div&gt;&lt;div class=&quot;ea-list-row&quot;&gt;&lt;span&gt;轻云户外皮肤衣&lt;/span&gt;&lt;strong&gt;¥189&lt;/strong&gt;&lt;/div&gt;&lt;div class=&quot;ea-list-row&quot;&gt;&lt;span&gt;本品价格竞争力&lt;/span&gt;&lt;span class=&quot;ea-pill&quot;&gt;中等&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;
+        &lt;div class=&quot;ea-work-panel is-active&quot; data-work-panel=&quot;creative&quot;&gt;&lt;div class=&quot;ea-head&quot;&gt;&lt;div&gt;&lt;h2&gt;主图方向&lt;/h2&gt;&lt;p class=&quot;ea-sub&quot;&gt;系统已生成 3 组差异化方案，可选择后继续编辑&lt;/p&gt;&lt;/div&gt;&lt;button class=&quot;ea-button ea-primary&quot; type=&quot;button&quot; data-action=&quot;generate&quot;&gt;&lt;i data-lucide=&quot;wand-sparkles&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;生成选中方案&lt;/button&gt;&lt;/div&gt;&lt;div class=&quot;ea-triple&quot;&gt;&lt;article class=&quot;ea-idea is-selected&quot;&gt;&lt;div class=&quot;ea-visual&quot;&gt;&lt;i data-lucide=&quot;snowflake&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;/div&gt;&lt;div class=&quot;ea-inline&quot;&gt;&lt;h3&gt;方向 A 凉感实验室&lt;/h3&gt;&lt;span class=&quot;ea-pill good&quot;&gt;已选&lt;/span&gt;&lt;/div&gt;&lt;p&gt;冰感蓝白背景，面料微距置于视觉中心。主文案：上身即凉感。&lt;/p&gt;&lt;button class=&quot;ea-button&quot; type=&quot;button&quot; data-action=&quot;edit&quot;&gt;编辑方案&lt;/button&gt;&lt;/article&gt;&lt;article class=&quot;ea-idea&quot;&gt;&lt;div class=&quot;ea-visual&quot;&gt;&lt;i data-lucide=&quot;wind&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;/div&gt;&lt;h3&gt;方向 B 户外轻呼吸&lt;/h3&gt;&lt;p&gt;林荫骑行场景，突出腋下透气结构。主文案：风穿过，热不留。&lt;/p&gt;&lt;button class=&quot;ea-button&quot; type=&quot;button&quot; data-action=&quot;select&quot;&gt;选择方向&lt;/button&gt;&lt;/article&gt;&lt;article class=&quot;ea-idea&quot;&gt;&lt;div class=&quot;ea-visual&quot;&gt;&lt;i data-lucide=&quot;shield-check&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;/div&gt;&lt;h3&gt;方向 C 防晒参数派&lt;/h3&gt;&lt;p&gt;数据对比版式，强化 UPF50+ 与轻量收纳。主文案：晒不透，装得下。&lt;/p&gt;&lt;button class=&quot;ea-button&quot; type=&quot;button&quot; data-action=&quot;select&quot;&gt;选择方向&lt;/button&gt;&lt;/article&gt;&lt;/div&gt;&lt;/div&gt;
+        &lt;div class=&quot;ea-work-panel&quot; data-work-panel=&quot;tasks&quot;&gt;&lt;div class=&quot;ea-panel&quot;&gt;&lt;div class=&quot;ea-panel-head&quot;&gt;&lt;h2&gt;当前生成任务&lt;/h2&gt;&lt;button class=&quot;ea-button&quot; type=&quot;button&quot; data-go=&quot;assets&quot;&gt;打开完整任务中心&lt;/button&gt;&lt;/div&gt;&lt;div class=&quot;ea-panel-body&quot;&gt;&lt;div class=&quot;ea-list&quot;&gt;&lt;div&gt;&lt;div class=&quot;ea-inline&quot;&gt;&lt;h3&gt;模特场景主图&lt;/h3&gt;&lt;span class=&quot;ea-pill&quot;&gt;生成中 68%&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;ea-progress&quot;&gt;&lt;div style=&quot;width:68%&quot;&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;div class=&quot;ea-inline&quot;&gt;&lt;h3&gt;15 秒短视频&lt;/h3&gt;&lt;span class=&quot;ea-pill warn&quot;&gt;排队中&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;ea-progress&quot;&gt;&lt;div style=&quot;width:12%&quot;&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;
+      &lt;/section&gt;
+
+      &lt;section class=&quot;ea-page&quot; data-page-panel=&quot;assets&quot; aria-labelledby=&quot;assets-title&quot;&gt;
+        &lt;div class=&quot;ea-head&quot;&gt;&lt;div&gt;&lt;h1 id=&quot;assets-title&quot;&gt;素材任务中心&lt;/h1&gt;&lt;p class=&quot;ea-sub&quot;&gt;查看图片与视频生成状态，执行重试、取消和审核&lt;/p&gt;&lt;/div&gt;&lt;button class=&quot;ea-button ea-primary&quot; type=&quot;button&quot; data-action=&quot;new-task&quot;&gt;&lt;i data-lucide=&quot;plus&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;新建任务&lt;/button&gt;&lt;/div&gt;
+        &lt;div class=&quot;ea-panel&quot;&gt;&lt;div class=&quot;ea-panel-head&quot;&gt;&lt;h2&gt;最近任务&lt;/h2&gt;&lt;span class=&quot;ea-pill&quot;&gt;全部状态&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;ea-table-wrap&quot;&gt;&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;任务&lt;/th&gt;&lt;th&gt;商品&lt;/th&gt;&lt;th&gt;类型&lt;/th&gt;&lt;th&gt;状态&lt;/th&gt;&lt;th&gt;更新时间&lt;/th&gt;&lt;th&gt;操作&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td&gt;模特展示主图&lt;/td&gt;&lt;td&gt;冰氧凉感防晒衣&lt;/td&gt;&lt;td&gt;图片&lt;/td&gt;&lt;td&gt;&lt;span class=&quot;ea-pill&quot;&gt;运行中 68%&lt;/span&gt;&lt;/td&gt;&lt;td&gt;14:32&lt;/td&gt;&lt;td&gt;&lt;button class=&quot;ea-button ea-danger&quot; type=&quot;button&quot; data-action=&quot;cancel-task&quot;&gt;取消&lt;/button&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;骑行场景短视频&lt;/td&gt;&lt;td&gt;冰氧凉感防晒衣&lt;/td&gt;&lt;td&gt;视频&lt;/td&gt;&lt;td&gt;&lt;span class=&quot;ea-pill warn&quot;&gt;失败&lt;/span&gt;&lt;/td&gt;&lt;td&gt;14:18&lt;/td&gt;&lt;td&gt;&lt;button class=&quot;ea-button&quot; type=&quot;button&quot; data-action=&quot;retry-task&quot;&gt;重试&lt;/button&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;温控对比主图&lt;/td&gt;&lt;td&gt;磁吸无线充&lt;/td&gt;&lt;td&gt;图片&lt;/td&gt;&lt;td&gt;&lt;span class=&quot;ea-pill good&quot;&gt;成功&lt;/span&gt;&lt;/td&gt;&lt;td&gt;昨天 18:40&lt;/td&gt;&lt;td&gt;&lt;button class=&quot;ea-button&quot; type=&quot;button&quot; data-action=&quot;review-asset&quot;&gt;审核&lt;/button&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/div&gt;&lt;/div&gt;
+      &lt;/section&gt;
+
+      &lt;section class=&quot;ea-page&quot; data-page-panel=&quot;review&quot; aria-labelledby=&quot;review-title&quot;&gt;
+        &lt;div class=&quot;ea-head&quot;&gt;&lt;div&gt;&lt;h1 id=&quot;review-title&quot;&gt;投放实验与经营复盘&lt;/h1&gt;&lt;p class=&quot;ea-sub&quot;&gt;AI 提供建议，主管人工确认，经营数据回填后形成复盘&lt;/p&gt;&lt;/div&gt;&lt;span class=&quot;ea-pill warn&quot;&gt;待主管审核&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&quot;ea-grid-2&quot;&gt;&lt;div class=&quot;ea-panel&quot;&gt;&lt;div class=&quot;ea-panel-head&quot;&gt;&lt;h2&gt;户外人群冷启动测试&lt;/h2&gt;&lt;span class=&quot;ea-small&quot;&gt;建议版本 V1&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;ea-panel-body&quot;&gt;&lt;div class=&quot;ea-list&quot;&gt;&lt;div&gt;&lt;h3&gt;目标人群&lt;/h3&gt;&lt;p class=&quot;ea-small&quot;&gt;22–35 岁女性，近期浏览露营、骑行、防晒用品；一二线城市优先。&lt;/p&gt;&lt;/div&gt;&lt;div&gt;&lt;h3&gt;出价与实验&lt;/h3&gt;&lt;p class=&quot;ea-small&quot;&gt;小预算分两组测试：凉感实验室主图 vs 户外轻呼吸主图。&lt;/p&gt;&lt;/div&gt;&lt;div&gt;&lt;h3&gt;观察目标&lt;/h3&gt;&lt;p class=&quot;ea-small&quot;&gt;7 天周期，重点比较 CTR、转化率与详情页跳失率。&lt;/p&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&quot;ea-actions&quot; style=&quot;margin-top:16px&quot;&gt;&lt;button class=&quot;ea-button ea-primary&quot; type=&quot;button&quot; data-action=&quot;approve&quot;&gt;确认采纳&lt;/button&gt;&lt;button class=&quot;ea-button&quot; type=&quot;button&quot; data-action=&quot;reject&quot;&gt;驳回调整&lt;/button&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&quot;ea-panel&quot;&gt;&lt;div class=&quot;ea-panel-head&quot;&gt;&lt;h2&gt;目标与实际&lt;/h2&gt;&lt;span class=&quot;ea-pill good&quot;&gt;已回填 7 天&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;ea-panel-body&quot;&gt;&lt;div class=&quot;ea-list&quot;&gt;&lt;div class=&quot;ea-list-row&quot;&gt;&lt;span&gt;曝光量&lt;/span&gt;&lt;strong&gt;120,000&lt;/strong&gt;&lt;/div&gt;&lt;div class=&quot;ea-list-row&quot;&gt;&lt;span&gt;CTR&lt;/span&gt;&lt;strong&gt;3.8% &lt;span class=&quot;ea-small&quot;&gt;目标 3.2%&lt;/span&gt;&lt;/strong&gt;&lt;/div&gt;&lt;div class=&quot;ea-list-row&quot;&gt;&lt;span&gt;转化率&lt;/span&gt;&lt;strong&gt;2.1% &lt;span class=&quot;ea-small&quot;&gt;目标 2.5%&lt;/span&gt;&lt;/strong&gt;&lt;/div&gt;&lt;div class=&quot;ea-list-row&quot;&gt;&lt;span&gt;GMV&lt;/span&gt;&lt;strong&gt;¥38,640&lt;/strong&gt;&lt;/div&gt;&lt;div class=&quot;ea-list-row&quot;&gt;&lt;span&gt;ROI&lt;/span&gt;&lt;strong&gt;待口径确认&lt;/strong&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;
+      &lt;/section&gt;
+
+      &lt;section class=&quot;ea-page&quot; data-page-panel=&quot;imports&quot; aria-labelledby=&quot;imports-title&quot;&gt;
+        &lt;div class=&quot;ea-head&quot;&gt;&lt;div&gt;&lt;h1 id=&quot;imports-title&quot;&gt;批量导入与数据中心&lt;/h1&gt;&lt;p class=&quot;ea-sub&quot;&gt;上传商品、SKU 库存或经营数据，完成字段映射与校验&lt;/p&gt;&lt;/div&gt;&lt;button class=&quot;ea-button&quot; type=&quot;button&quot; data-action=&quot;download&quot;&gt;&lt;i data-lucide=&quot;download&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;下载模板&lt;/button&gt;&lt;/div&gt;
+        &lt;div class=&quot;ea-panel&quot;&gt;&lt;div class=&quot;ea-panel-body&quot;&gt;&lt;div class=&quot;ea-form-grid&quot;&gt;&lt;label&gt;导入类型&lt;select class=&quot;ea-input&quot;&gt;&lt;option&gt;商品信息&lt;/option&gt;&lt;option&gt;SKU 库存&lt;/option&gt;&lt;option&gt;经营数据&lt;/option&gt;&lt;/select&gt;&lt;/label&gt;&lt;label&gt;目标店铺&lt;select class=&quot;ea-input&quot;&gt;&lt;option&gt;云朵服饰旗舰店&lt;/option&gt;&lt;option&gt;云朵户外专营店&lt;/option&gt;&lt;/select&gt;&lt;/label&gt;&lt;/div&gt;&lt;div class=&quot;ea-drop&quot; style=&quot;margin-top:16px&quot;&gt;&lt;i data-lucide=&quot;file-spreadsheet&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;h2&gt;拖入 Excel 或 CSV 文件&lt;/h2&gt;&lt;p class=&quot;ea-sub&quot;&gt;上传后进入字段映射、校验预览和错误行处理&lt;/p&gt;&lt;button class=&quot;ea-button ea-primary&quot; type=&quot;button&quot; style=&quot;margin-top:14px&quot; data-action=&quot;upload&quot;&gt;选择文件&lt;/button&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;
+      &lt;/section&gt;
+
+      &lt;section class=&quot;ea-page&quot; data-page-panel=&quot;settings&quot; aria-labelledby=&quot;settings-title&quot;&gt;
+        &lt;div class=&quot;ea-head&quot;&gt;&lt;div&gt;&lt;h1 id=&quot;settings-title&quot;&gt;系统与服务配置&lt;/h1&gt;&lt;p class=&quot;ea-sub&quot;&gt;管理员维护模型服务、队列并发与超时重试规则&lt;/p&gt;&lt;/div&gt;&lt;button class=&quot;ea-button ea-primary&quot; type=&quot;button&quot; data-action=&quot;save&quot;&gt;保存配置&lt;/button&gt;&lt;/div&gt;
+        &lt;div class=&quot;ea-grid-2&quot;&gt;&lt;div class=&quot;ea-panel&quot;&gt;&lt;div class=&quot;ea-panel-head&quot;&gt;&lt;h2&gt;AI 服务&lt;/h2&gt;&lt;/div&gt;&lt;div class=&quot;ea-panel-body&quot;&gt;&lt;div class=&quot;ea-form-grid&quot;&gt;&lt;label&gt;大语言模型&lt;select class=&quot;ea-input&quot;&gt;&lt;option&gt;OpenAI 兼容接口&lt;/option&gt;&lt;/select&gt;&lt;/label&gt;&lt;label&gt;模型名称&lt;input class=&quot;ea-input&quot; value=&quot;运营分析模型&quot;&gt;&lt;/label&gt;&lt;label&gt;图片服务&lt;select class=&quot;ea-input&quot;&gt;&lt;option&gt;图像生成适配器 A&lt;/option&gt;&lt;/select&gt;&lt;/label&gt;&lt;label&gt;视频服务&lt;select class=&quot;ea-input&quot;&gt;&lt;option&gt;视频生成适配器 B&lt;/option&gt;&lt;/select&gt;&lt;/label&gt;&lt;/div&gt;&lt;p class=&quot;ea-small&quot; style=&quot;margin-top:12px&quot;&gt;密钥仅显示脱敏状态：•••••••• 已配置&lt;/p&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&quot;ea-panel&quot;&gt;&lt;div class=&quot;ea-panel-head&quot;&gt;&lt;h2&gt;任务规则&lt;/h2&gt;&lt;/div&gt;&lt;div class=&quot;ea-panel-body&quot;&gt;&lt;div class=&quot;ea-form-grid&quot;&gt;&lt;label&gt;图片并发&lt;input class=&quot;ea-input&quot; type=&quot;number&quot; value=&quot;4&quot;&gt;&lt;/label&gt;&lt;label&gt;视频并发&lt;input class=&quot;ea-input&quot; type=&quot;number&quot; value=&quot;2&quot;&gt;&lt;/label&gt;&lt;label&gt;超时时间 分钟&lt;input class=&quot;ea-input&quot; type=&quot;number&quot; value=&quot;20&quot;&gt;&lt;/label&gt;&lt;label&gt;失败重试次数&lt;input class=&quot;ea-input&quot; type=&quot;number&quot; value=&quot;2&quot;&gt;&lt;/label&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;
+      &lt;/section&gt;
+    &lt;/main&gt;
+  &lt;/div&gt;
+
+  &lt;script&gt;
+    (() =&gt; {
+      const root = document.getElementById(&#x27;ecom-ops-prototype&#x27;);
+      const title = root.querySelector(&#x27;#ea-top-title&#x27;);
+      const toast = root.querySelector(&#x27;.ea-toast&#x27;);
+      const titleMap = {dashboard:&#x27;运营大盘&#x27;,workbench:&#x27;商品工作台&#x27;,assets:&#x27;素材任务&#x27;,review:&#x27;投放复盘&#x27;,imports:&#x27;导入中心&#x27;,settings:&#x27;系统配置&#x27;};
+      function showPage(name) {
+        root.querySelectorAll(&#x27;[data-page-panel]&#x27;).forEach(p =&gt; p.classList.toggle(&#x27;is-active&#x27;, p.dataset.pagePanel === name));
+        root.querySelectorAll(&#x27;[data-page]&#x27;).forEach(b =&gt; b.setAttribute(&#x27;aria-current&#x27;, b.dataset.page === name ? &#x27;page&#x27; : &#x27;false&#x27;));
+        title.textContent = titleMap[name] || &#x27;电商运营助手&#x27;;
+      }
+      function notify(message) {
+        toast.textContent = message;
+        toast.classList.add(&#x27;is-on&#x27;);
+        clearTimeout(notify.timer);
+        notify.timer = setTimeout(() =&gt; toast.classList.remove(&#x27;is-on&#x27;), 1900);
+      }
+      root.addEventListener(&#x27;click&#x27;, (event) =&gt; {
+        const pageButton = event.target.closest(&#x27;[data-page]&#x27;);
+        if (pageButton) showPage(pageButton.dataset.page);
+        const goButton = event.target.closest(&#x27;[data-go]&#x27;);
+        if (goButton) showPage(goButton.dataset.go);
+        const tab = event.target.closest(&#x27;[data-work-tab]&#x27;);
+        if (tab) {
+          root.querySelectorAll(&#x27;[data-work-tab]&#x27;).forEach(t =&gt; t.setAttribute(&#x27;aria-selected&#x27;, String(t === tab)));
+          root.querySelectorAll(&#x27;[data-work-panel]&#x27;).forEach(p =&gt; p.classList.toggle(&#x27;is-active&#x27;, p.dataset.workPanel === tab.dataset.workTab));
+        }
+        const select = event.target.closest(&#x27;[data-action=&quot;select&quot;]&#x27;);
+        if (select) {
+          root.querySelectorAll(&#x27;.ea-idea&#x27;).forEach(i =&gt; i.classList.remove(&#x27;is-selected&#x27;));
+          const idea = select.closest(&#x27;.ea-idea&#x27;);
+          idea.classList.add(&#x27;is-selected&#x27;);
+          root.querySelectorAll(&#x27;.ea-idea .ea-pill.good&#x27;).forEach(p =&gt; p.remove());
+          const badge = document.createElement(&#x27;span&#x27;);
+          badge.className = &#x27;ea-pill good&#x27;;
+          badge.textContent = &#x27;已选&#x27;;
+          idea.querySelector(&#x27;h3&#x27;).insertAdjacentElement(&#x27;afterend&#x27;, badge);
+          notify(&#x27;已切换主图方向&#x27;);
+        }
+        const action = event.target.closest(&#x27;[data-action]&#x27;);
+        if (action &amp;&amp; !select) {
+          const messages = {generate:&#x27;图片生成任务已加入队列&#x27;,edit:&#x27;已进入方案编辑状态&#x27;,cancelTask:&#x27;已提交取消请求&#x27;,retryTask:&#x27;任务已重新排队&#x27;,reviewAsset:&#x27;素材审核已打开&#x27;,approve:&#x27;投放建议已确认采纳&#x27;,reject:&#x27;方案已驳回，请补充调整意见&#x27;,download:&#x27;模板下载已准备&#x27;,upload:&#x27;已选择示例商品表格&#x27;,save:&#x27;配置已保存为新版本&#x27;,newTask:&#x27;新建任务面板已打开&#x27;};
+          const key = action.dataset.action.replace(/-([a-z])/g, (_, c) =&gt; c.toUpperCase());
+          notify(messages[key] || &#x27;操作已完成&#x27;);
+        }
+      });
+      const design = { radius: 12, accent: &#x27;#4f67d8&#x27;, compact: false };
+      function renderDesign() {
+        root.style.setProperty(&#x27;--ea-radius&#x27;, `${design.radius}px`);
+        root.style.setProperty(&#x27;--ea-accent&#x27;, design.accent);
+        root.querySelector(&#x27;.ea-window&#x27;).style.minHeight = design.compact ? &#x27;650px&#x27; : &#x27;740px&#x27;;
+      }
+      renderDesign();
+      if (globalThis.Tweak) {
+        const tweak = new Tweak({ container: root, onChange: renderDesign });
+        tweak.addColorPicker(design, &#x27;accent&#x27;, { label: &#x27;品牌主色&#x27;, reference: &#x27;--ea-accent&#x27; });
+        tweak.addSlider(design, &#x27;radius&#x27;, { label: &#x27;圆角&#x27;, min: 4, max: 20, unit: &#x27;px&#x27;, reference: &#x27;--ea-radius&#x27; });
+        tweak.addToggle(design, &#x27;compact&#x27;, { label: &#x27;紧凑高度&#x27;, reference: &#x27;layout.compact&#x27; });
+      }
+    })();
+  &lt;/script&gt;
+&lt;/div&gt;
+
+&lt;script src=&quot;https://unpkg.com/@floating-ui/core@1.7.3/dist/floating-ui.core.umd.min.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://unpkg.com/@floating-ui/dom@1.7.4/dist/floating-ui.dom.umd.min.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+(() =&gt; {
+  if (window.FloatingUIDOM == null) {
+    return;
+  }
+  const { autoUpdate, computePosition, flip, offset, shift, size } =
+    window.FloatingUIDOM;
+  const tooltipPlacements = new Set([&quot;top&quot;, &quot;right&quot;, &quot;bottom&quot;, &quot;left&quot;]);
+  const tooltipId = `codex-visualization-tooltip-${
+    window.crypto?.randomUUID?.() ?? Date.now().toString(36)
+  }`;
+  const tooltipGap = 5;
+  const hoverDelay = 700;
+  const skipDelay = 300;
+  let activeTrigger = null;
+  let pendingTrigger = null;
+  let tooltip = null;
+  let openTimeout = null;
+  let autoUpdateCleanup = null;
+  let positionRequest = 0;
+  let skipDelayUntil = 0;
+  let lastPointerWasTouch = false;
+  let pinnedByTouch = false;
+
+  const getTrigger = (target) =&gt;
+    target?.nodeType === Node.ELEMENT_NODE
+      ? target.closest(&quot;[data-tooltip]&quot;)
+      : null;
+  const containsTarget = (trigger, target) =&gt;
+    target?.nodeType != null &amp;&amp; trigger.contains(target);
+  const getContent = (trigger) =&gt;
+    trigger.getAttribute(&quot;data-tooltip&quot;)?.trim() ?? &quot;&quot;;
+  const getPlacement = (trigger) =&gt; {
+    const placement = trigger.getAttribute(&quot;data-tooltip-placement&quot;);
+    return tooltipPlacements.has(placement) ? placement : &quot;top&quot;;
+  };
+  const getTooltip = () =&gt; {
+    if (tooltip == null) {
+      tooltip = document.createElement(&quot;div&quot;);
+      tooltip.id = tooltipId;
+      tooltip.className = &quot;tooltip&quot;;
+      tooltip.setAttribute(&quot;role&quot;, &quot;tooltip&quot;);
+    }
+    return tooltip;
+  };
+  const setDescribedBy = (trigger, described) =&gt; {
+    const ids = new Set(
+      (trigger.getAttribute(&quot;aria-describedby&quot;) ?? &quot;&quot;)
+        .split(/\s+/)
+        .filter(Boolean),
+    );
+    if (described) {
+      ids.add(tooltipId);
+    } else {
+      ids.delete(tooltipId);
+    }
+    if (ids.size === 0) {
+      trigger.removeAttribute(&quot;aria-describedby&quot;);
+    } else {
+      trigger.setAttribute(&quot;aria-describedby&quot;, [...ids].join(&quot; &quot;));
+    }
+  };
+  const clearOpenTimeout = () =&gt; {
+    if (openTimeout != null) {
+      window.clearTimeout(openTimeout);
+      openTimeout = null;
+    }
+    pendingTrigger = null;
+  };
+  const closeTooltip = (activateSkipDelay = true) =&gt; {
+    clearOpenTimeout();
+    pinnedByTouch = false;
+    positionRequest += 1;
+    autoUpdateCleanup?.();
+    autoUpdateCleanup = null;
+    if (activeTrigger == null) {
+      return;
+    }
+    setDescribedBy(activeTrigger, false);
+    activeTrigger = null;
+    tooltip?.remove();
+    if (activateSkipDelay) {
+      skipDelayUntil = Date.now() + skipDelay;
+    }
+  };
+  const updatePosition = (trigger, floating) =&gt; {
+    const request = ++positionRequest;
+    void computePosition(trigger, floating, {
+      middleware: [
+        offset(tooltipGap),
+        flip({ padding: tooltipGap }),
+        shift({ padding: tooltipGap }),
+        size({
+          padding: tooltipGap,
+          apply({ availableHeight, availableWidth, elements }) {
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-width&quot;,
+              `${Math.max(0, availableWidth)}px`,
+            );
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-height&quot;,
+              `${Math.max(0, availableHeight)}px`,
+            );
+          },
+        }),
+      ],
+      placement: getPlacement(trigger),
+      strategy: &quot;fixed&quot;,
+    })
+      .then(({ x, y }) =&gt; {
+        if (activeTrigger !== trigger || request !== positionRequest) {
+          return;
+        }
+        const scale = window.devicePixelRatio || 1;
+        floating.style.transform = `translate(${Math.round(x * scale) / scale}px, ${Math.round(y * scale) / scale}px)`;
+        floating.style.visibility = &quot;visible&quot;;
+      })
+      .catch(() =&gt; {
+        if (activeTrigger === trigger &amp;&amp; request === positionRequest) {
+          closeTooltip(false);
+        }
+      });
+  };
+  const openTooltip = (trigger) =&gt; {
+    const content = getContent(trigger);
+    if (!trigger.isConnected || content.length === 0) {
+      return;
+    }
+    clearOpenTimeout();
+    if (activeTrigger === trigger) {
+      return;
+    }
+    closeTooltip();
+    const floating = getTooltip();
+    floating.textContent = content;
+    floating.style.visibility = &quot;hidden&quot;;
+    floating.style.transform = &quot;translate(0, 0)&quot;;
+    document.body.appendChild(floating);
+    activeTrigger = trigger;
+    setDescribedBy(trigger, true);
+    autoUpdateCleanup = autoUpdate(trigger, floating, () =&gt; {
+      updatePosition(trigger, floating);
+    });
+  };
+  const requestOpen = (trigger, immediate = false) =&gt; {
+    if (
+      getContent(trigger).length === 0 ||
+      activeTrigger === trigger ||
+      pendingTrigger === trigger
+    ) {
+      return;
+    }
+    clearOpenTimeout();
+    pendingTrigger = trigger;
+    const delay =
+      immediate || activeTrigger != null || Date.now() &lt; skipDelayUntil
+        ? 0
+        : hoverDelay;
+    if (delay === 0) {
+      openTooltip(trigger);
+      return;
+    }
+    openTimeout = window.setTimeout(() =&gt; {
+      openTimeout = null;
+      pendingTrigger = null;
+      openTooltip(trigger);
+    }, delay);
+  };
+  const handlePointerOpen = (event) =&gt; {
+    if (event.pointerType === &quot;touch&quot;) {
+      return;
+    }
+    const trigger = getTrigger(event.target);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    requestOpen(trigger);
+  };
+  const handlePointer = (event) =&gt; {
+    lastPointerWasTouch =
+      event.type === &quot;pointerdown&quot; &amp;&amp; event.pointerType === &quot;touch&quot;;
+  };
+  const handleTouchClick = (event) =&gt; {
+    const isTouch = event.pointerType === &quot;touch&quot; || lastPointerWasTouch;
+    lastPointerWasTouch = false;
+    if (!isTouch || event.detail === 0) {
+      return;
+    }
+    const trigger = getTrigger(event.target);
+    if (
+      trigger == null ||
+      !trigger.isConnected ||
+      getContent(trigger).length === 0 ||
+      (pinnedByTouch &amp;&amp; activeTrigger === trigger)
+    ) {
+      if (pinnedByTouch) {
+        closeTooltip();
+      }
+      return;
+    }
+    openTooltip(trigger);
+    pinnedByTouch = activeTrigger === trigger;
+    window.setTimeout(() =&gt; {
+      if (activeTrigger === trigger &amp;&amp; !trigger.isConnected) {
+        closeTooltip(false);
+      }
+    }, 0);
+  };
+  const handleLeave = (event) =&gt; {
+    if (pinnedByTouch) {
+      return;
+    }
+    const trigger = getTrigger(event.target);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const handleFocusIn = (event) =&gt; {
+    const trigger = getTrigger(event.target);
+    if (trigger?.matches(&quot;:focus-visible&quot;)) {
+      requestOpen(trigger, true);
+    }
+  };
+  const handleKeyDown = (event) =&gt; {
+    if (event.key === &quot;Escape&quot;) {
+      closeTooltip();
+    }
+  };
+  const handleContextMenu = (event) =&gt; {
+    lastPointerWasTouch = false;
+    const trigger = getTrigger(event.target);
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const destroy = () =&gt; {
+    closeTooltip(false);
+    lastPointerWasTouch = false;
+    document.removeEventListener(&quot;pointerover&quot;, handlePointerOpen);
+    document.removeEventListener(&quot;pointerdown&quot;, handlePointer);
+    document.removeEventListener(&quot;pointercancel&quot;, handlePointer);
+    document.removeEventListener(&quot;click&quot;, handleTouchClick);
+    document.removeEventListener(&quot;pointerout&quot;, handleLeave);
+    document.removeEventListener(&quot;focusin&quot;, handleFocusIn);
+    document.removeEventListener(&quot;focusout&quot;, handleLeave);
+    document.removeEventListener(&quot;keydown&quot;, handleKeyDown);
+    document.removeEventListener(&quot;contextmenu&quot;, handleContextMenu);
+    tooltip = null;
+  };
+
+  document.addEventListener(&quot;pointerover&quot;, handlePointerOpen);
+  document.addEventListener(&quot;pointerdown&quot;, handlePointer);
+  document.addEventListener(&quot;pointercancel&quot;, handlePointer);
+  document.addEventListener(&quot;click&quot;, handleTouchClick);
+  document.addEventListener(&quot;pointerout&quot;, handleLeave);
+  document.addEventListener(&quot;focusin&quot;, handleFocusIn);
+  document.addEventListener(&quot;focusout&quot;, handleLeave);
+  document.addEventListener(&quot;keydown&quot;, handleKeyDown);
+  document.addEventListener(&quot;contextmenu&quot;, handleContextMenu);
+  window.addEventListener(&quot;pagehide&quot;, destroy, { once: true });
+})();
+&lt;/script&gt;
+&lt;script id=&quot;codex-visualization-tabs&quot;&gt;
+(() =&gt; {
+  const selector = &#x27;.nav[role=&quot;tablist&quot;] [role=&quot;tab&quot;]&#x27;;
+  const disabled = &#x27;:disabled,[aria-disabled=&quot;true&quot;]&#x27;;
+  const selectTab = (selected) =&gt; {
+    const panelId = selected.getAttribute(&quot;aria-controls&quot;);
+    for (const tab of selected.closest(&#x27;[role=&quot;tablist&quot;]&#x27;).querySelectorAll(&#x27;[role=&quot;tab&quot;]&#x27;)) {
+      const active = tab === selected;
+      tab.classList.toggle(&quot;active&quot;, active);
+      tab.setAttribute(&quot;aria-selected&quot;, String(active));
+      const id = tab.getAttribute(&quot;aria-controls&quot;);
+      const panel = id &amp;&amp; document.getElementById(id);
+      if (panel != null) {
+        panel.hidden = id !== panelId;
+        if (!panel.hidden &amp;&amp; selected.id) {
+          panel.setAttribute(&quot;aria-labelledby&quot;, selected.id);
+        }
+      }
+    }
+  };
+  const interact = (event) =&gt; {
+    const tab = event.target?.closest?.(selector);
+    if (event.defaultPrevented || tab == null || tab.matches(disabled)) {
+      return;
+    }
+    if (event.type === &quot;click&quot;) {
+      selectTab(tab);
+      return;
+    }
+    const tabs = Array.from(
+      tab.closest(&#x27;[role=&quot;tablist&quot;]&#x27;).querySelectorAll(&#x27;[role=&quot;tab&quot;]&#x27;),
+    ).filter((candidate) =&gt; !candidate.matches(disabled));
+    const current = tabs.indexOf(tab);
+    let next;
+    if (event.key === &quot;ArrowRight&quot; || event.key === &quot;ArrowDown&quot;) {
+      next = (current + 1) % tabs.length;
+    } else if (event.key === &quot;ArrowLeft&quot; || event.key === &quot;ArrowUp&quot;) {
+      next = (current + tabs.length - 1) % tabs.length;
+    } else if (event.key === &quot;Home&quot;) {
+      next = 0;
+    } else if (event.key === &quot;End&quot;) {
+      next = tabs.length - 1;
+    } else {
+      return;
+    }
+    event.preventDefault();
+    tabs[next].focus();
+    selectTab(tabs[next]);
+  };
+
+  for (const list of document.querySelectorAll(&#x27;.nav[role=&quot;tablist&quot;]&#x27;)) {
+    const selected =
+      list.querySelector(&#x27;[role=&quot;tab&quot;][aria-selected=&quot;true&quot;]&#x27;) ??
+      list.querySelector(&#x27;[role=&quot;tab&quot;].active&#x27;) ??
+      list.querySelector(&#x27;[role=&quot;tab&quot;]&#x27;);
+    if (selected != null) {
+      selectTab(selected);
+    }
+  }
+  document.addEventListener(&quot;click&quot;, interact);
+  document.addEventListener(&quot;keydown&quot;, interact);
+  window.addEventListener(&quot;pagehide&quot;, () =&gt; {
+    document.removeEventListener(&quot;click&quot;, interact);
+    document.removeEventListener(&quot;keydown&quot;, interact);
+  }, { once: true });
+})();
+&lt;/script&gt;
+&lt;script id=&quot;codex-visualization-lucide&quot; async src=&quot;https://unpkg.com/lucide@1.17.0/dist/umd/lucide.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+(() =&gt; {
+  const initialize = () =&gt; {
+    globalThis.lucide?.createIcons({ attrs: { width: 16, height: 16 } });
+  };
+  if (globalThis.lucide != null) {
+    initialize();
+    return;
+  }
+  document
+    .getElementById(&quot;codex-visualization-lucide&quot;)
+    ?.addEventListener(&quot;load&quot;, initialize, { once: true });
+})();
+&lt;/script&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe>
+</body>
+</html>
