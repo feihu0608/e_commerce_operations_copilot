@@ -13,6 +13,8 @@
 - Transactional Outbox Dispatcher 在数据库提交后可靠投递任务。
 - `task_attempts`、`task_events` 记录执行尝试与时间线，重复消息不会重复执行已领取任务。
 - 文本 AI 输出经过 Pydantic Schema 校验，最多执行一次结构修复。
+- 文本模型超时、最大输出和思考模式可配置，并受 Worker 租约预算校验；嵌套 JSON Schema 同时约束初次生成与 repair。
+- 供应商媒体即使返回通用二进制类型，也必须通过受支持格式的文件签名校验后才能持久化。
 - 视频采用 submit/poll 两阶段短任务，不占用 Worker 循环等待。
 - Alembic 管理数据库版本；部署时先迁移，再启动 API、Worker 和 Dispatcher。
 - 审计日志、请求 ID、模型调用元数据、健康与就绪探针支持问题追踪。
@@ -85,3 +87,5 @@ cd /root/myproject/e_commerce_operations_copilot
 - `GET /api/audit-logs`：主管查看关键操作审计记录。
 
 图片和视频真实生成会产生模型费用。Mock 结果与 live 结果始终通过 `provider_mode` 区分，Mock 通过不能替代真实供应商验收。
+
+2026 年 9 月 14 日的实测任务、模型耗时、媒体大小、审批状态和浏览器截图见 [准生产级升级与验收说明.md](./准生产级升级与验收说明.md)。

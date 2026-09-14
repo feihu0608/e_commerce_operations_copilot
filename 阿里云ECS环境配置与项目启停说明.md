@@ -367,9 +367,13 @@ http://<ECS_PUBLIC_IP>/api/health
 AI_MODE=live
 MEDIA_MODE=live
 TEXT_MODEL=Qwen/Qwen3.6-27B
+TEXT_MODEL_TIMEOUT_SECONDS=150
+TEXT_MODEL_MAX_TOKENS=4096
+TEXT_MODEL_ENABLE_THINKING=false
+TEXT_WORKFLOW_LEASE_SECONDS=360
 ```
 
-硅基流动密钥只保存在服务器项目目录的 `.env` 中，权限为 `600`。文本、图片和视频均已完成真实调用；视频使用 submit/poll 短任务并保存供应商任务标识。每次真实图片或视频生成都会产生费用。
+硅基流动密钥只保存在服务器项目目录的 `.env` 中，权限为 `600`。文本超时最多执行两次（初次生成加一次有限 repair），因此工作流租约必须严格大于两倍单次模型超时；配置校验不满足时服务会拒绝启动。默认关闭 Qwen 冗长思考以降低演示延迟，仍由完整 JSON Schema 约束输出。文本、图片和视频均已完成真实调用；视频使用 submit/poll 短任务并保存供应商任务标识。每次真实图片或视频生成都会产生费用。
 
 登录页支持注册普通运营账号。内置 `operator`、`manager` 账号的密码不写入代码、文档或 Git；如需重新设置，应通过安全的服务器维护流程更新数据库密码哈希，并把新值仅保存在受限的私有密码管理位置。
 
