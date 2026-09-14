@@ -4,11 +4,13 @@ from decimal import Decimal, InvalidOperation
 from hashlib import sha256
 import csv
 import io
+from pathlib import Path
 import secrets
 from typing import Any
 
 from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from openpyxl import load_workbook
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import func, select, text
@@ -64,6 +66,18 @@ class DecisionInput(BaseModel):
     note: str = Field(default="", max_length=500)
 
 
+class ExperimentInput(BaseModel):
+    product_id: int
+    title: str = Field(min_length=2, max_length=200)
+    audience: str = Field(min_length=2, max_length=300)
+    channel: str = Field(min_length=2, max_length=50)
+    budget: Decimal = Field(gt=0, le=1000000)
+    period: str = Field(min_length=2, max_length=50)
+    creative_angle: str = Field(min_length=2, max_length=300)
+    target_ctr: Decimal = Field(gt=0, le=100)
+    stop_roas: Decimal = Field(ge=0, le=100)
+
+
 class MetricInput(BaseModel):
     period: str = Field(min_length=2, max_length=50)
     impressions: int = Field(ge=0)
@@ -78,9 +92,17 @@ def serialize_user(user: User):
 
 
 def serialize_product(product: Product):
+    image_url = product.image_url
+    if not image_url or image_url == "/images/demo-phone.png":
+        tile_names = [
+            "曜石 X1", "Buds Air", "65W", "HUAWEI", "Apple", "Xiaomi", "OPPO",
+            "vivo", "HONOR", "Samsung", "OnePlus", "DJI", "Sony",
+        ]
+        tile = next((index for index, name in enumerate(tile_names) if name.lower() in product.name.lower()), product.id % 13)
+        image_url = f"/images/product-catalog-grid.png#tile={tile}"
     return {
         "id": product.id, "name": product.name, "category": product.category,
-        "price": float(product.price), "status": product.status, "image_url": product.image_url,
+        "price": float(product.price), "status": product.status, "image_url": image_url,
         "summary": product.summary, "inventory": product.inventory,
         "warning_threshold": product.warning_threshold,
         "inventory_warning": product.inventory <= product.warning_threshold,
@@ -93,6 +115,13 @@ def serialize_task(task: GenerationTask):
         "status": task.status, "progress": task.progress, "provider_mode": task.provider_mode,
         "error_message": task.error_message, "result_url": task.result_url,
         "created_at": task.created_at, "updated_at": task.updated_at,
+    }
+
+
+def serialize_experiment(item: Experiment):
+    return {
+        "id": item.id, "product_id": item.product_id, "title": item.title, "status": item.status,
+        "strategy": item.strategy, "decision_note": item.decision_note,
     }
 
 
@@ -124,6 +153,7 @@ def seed_users(db: Session):
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    Path(get_settings().storage_dir).mkdir(parents=True, exist_ok=True)
     Base.metadata.create_all(engine)
     with SessionLocal() as db:
         seed_users(db)
@@ -138,6 +168,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.mount("/storage", StaticFiles(directory=get_settings().storage_dir, check_dir=False), name="storage")
 
 
 @app.get("/api/health")
@@ -357,7 +388,42 @@ def confirm_content(content_id: int, _: User = Depends(get_current_user), db: Se
 @app.get("/api/experiments")
 def experiments(_: User = Depends(get_current_user), db: Session = Depends(get_db)):
     items = db.scalars(select(Experiment).order_by(Experiment.id.desc())).all()
-    return [{"id": x.id, "product_id": x.product_id, "title": x.title, "status": x.status, "strategy": x.strategy, "decision_note": x.decision_note} for x in items]
+    return [serialize_experiment(item) for item in items]
+
+
+@app.post("/api/experiments", status_code=201)
+def create_experiment(body: ExperimentInput, _: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not db.get(Product, body.product_id):
+        raise HTTPException(status_code=404, detail="商品不存在")
+    item = Experiment(
+        product_id=body.product_id,
+        title=body.title,
+        status="draft",
+        strategy={
+            "audience": body.audience,
+            "channel": body.channel,
+            "budget": float(body.budget),
+            "period": body.period,
+            "creative_angle": body.creative_angle,
+            "targets": {"ctr": float(body.target_ctr), "stop_roas": float(body.stop_roas)},
+        },
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return serialize_experiment(item)
+
+
+@app.post("/api/experiments/{experiment_id}/submit")
+def submit_experiment(experiment_id: int, _: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    item = db.get(Experiment, experiment_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="投放方案不存在")
+    if item.status != "draft":
+        raise HTTPException(status_code=409, detail="只有草稿方案可以提交审批")
+    item.status = "submitted"
+    db.commit()
+    return serialize_experiment(item)
 
 
 @app.post("/api/experiments/{experiment_id}/decision")

@@ -1,6 +1,9 @@
 import asyncio
 import json
+from pathlib import Path
 import time
+from urllib.parse import urlparse
+import httpx
 from celery import Celery
 from sqlalchemy import select
 from .ai_gateway import SiliconFlowGateway
@@ -11,7 +14,7 @@ from .models import ContentDocument, GenerationTask, Product
 
 settings = get_settings()
 celery_app = Celery("ecommerce_ops", broker=settings.celery_broker_url, backend=settings.celery_result_backend)
-celery_app.conf.update(task_track_started=True, task_time_limit=300, task_soft_time_limit=270)
+celery_app.conf.update(task_track_started=True, task_time_limit=900, task_soft_time_limit=840)
 
 
 MOCK_DIAGNOSIS = {
@@ -85,16 +88,78 @@ def generate_content(task_id: int, content_type: str):
 
 @celery_app.task(name="generate_media")
 def generate_media(task_id: int):
-    for progress in (12, 32, 58, 82):
-        if not _update(task_id, status="running", progress=progress):
-            return
-        time.sleep(0.7)
     with SessionLocal() as db:
         task = db.get(GenerationTask, task_id)
-        if not task or task.status == "cancelled":
+        product = db.get(Product, task.product_id) if task else None
+        if not task or not product or task.status == "cancelled":
             return
-        task.status = "succeeded"
-        task.progress = 100
-        task.result_url = "/images/demo-phone.png"
+        if task.provider_mode != "live":
+            task.status = "succeeded"
+            task.progress = 100
+            task.result_url = "/images/demo-phone.png"
+            db.commit()
+            return
+        task.status = "running"
+        task.progress = 10
         db.commit()
+        gateway = SiliconFlowGateway()
+        base = f"商品名称：{product.name}；品类：{product.category}；价格：{product.price} 元。"
+        try:
+            if task.kind == "image":
+                prompt = (
+                    f"{base}生成用于中国电商详情页的高端商品主图。产品单独居中，真实商业摄影，"
+                    "干净的渐变影棚背景，柔和轮廓光，突出材质和核心外观，不要文字、商标、水印和人物。"
+                )
+                payload = asyncio.run(gateway.generate_image(prompt))
+                items = payload.get("images") or payload.get("data") or []
+                remote_url = items[0].get("url") if items else None
+            else:
+                prompt = (
+                    f"{base}生成 9:16 电商商品展示短视频：产品在高级影棚展台缓慢旋转，镜头平稳推进，"
+                    "光影突出外观质感，适合新品投放，不要文字、商标、水印和人物。"
+                )
+                payload = asyncio.run(gateway.generate_video(
+                    prompt,
+                    on_poll=lambda attempt: _update(task_id, progress=min(90, 20 + attempt)),
+                ))
+                items = (payload.get("results") or {}).get("videos") or payload.get("videos") or []
+                remote_url = items[0].get("url") if items else None
+            if not remote_url:
+                raise RuntimeError("模型返回中没有可用的媒体地址")
+            result_url = asyncio.run(save_remote_media(remote_url, task.id, task.kind))
+            db.expire_all()
+            task = db.get(GenerationTask, task_id)
+            product = db.get(Product, task.product_id) if task else None
+            if not task or task.status == "cancelled":
+                return
+            task.status = "succeeded"
+            task.progress = 100
+            task.result_url = result_url
+            task.error_message = None
+            if product and task.kind == "image":
+                product.image_url = result_url
+            db.commit()
+        except Exception as exc:
+            db.rollback()
+            db.expire_all()
+            task = db.get(GenerationTask, task_id)
+            if task and task.status != "cancelled":
+                task.status = "failed"
+                task.progress = 100
+                task.error_message = f"真实模型调用失败：{str(exc)[:240]}"
+                db.commit()
 
+
+async def save_remote_media(remote_url: str, task_id: int, kind: str) -> str:
+    directory = Path(get_settings().storage_dir) / "generated"
+    directory.mkdir(parents=True, exist_ok=True)
+    suffix = Path(urlparse(remote_url).path).suffix.lower()
+    allowed = {"image": {".png", ".jpg", ".jpeg", ".webp"}, "video": {".mp4", ".webm"}}
+    if suffix not in allowed[kind]:
+        suffix = ".png" if kind == "image" else ".mp4"
+    target = directory / f"task-{task_id}{suffix}"
+    async with httpx.AsyncClient(timeout=240, follow_redirects=True) as client:
+        response = await client.get(remote_url)
+        response.raise_for_status()
+        target.write_bytes(response.content)
+    return f"/storage/generated/{target.name}"

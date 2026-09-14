@@ -23,6 +23,7 @@ class Settings(BaseModel):
     vision_model: str = os.getenv("VISION_MODEL", "Qwen/Qwen2.5-VL-72B-Instruct")
     ai_mode: str = os.getenv("AI_MODE", "mock")
     media_mode: str = os.getenv("MEDIA_MODE", "mock")
+    storage_dir: str = os.getenv("STORAGE_DIR", "/app/storage")
     demo_operator_password: str = os.getenv("DEMO_OPERATOR_PASSWORD", "")
     demo_manager_password: str = os.getenv("DEMO_MANAGER_PASSWORD", "")
 
