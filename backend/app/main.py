@@ -236,7 +236,16 @@ def product_detail(product_id: int, _: User = Depends(get_current_user), db: Ses
     metric = db.scalar(select(MetricRecord).where(MetricRecord.product_id == product_id).order_by(MetricRecord.id.desc()))
     return {
         "product": serialize_product(product),
-        "competitors": [{"id": c.id, "name": c.name, "price": float(c.price), "highlights": c.highlights} for c in competitors],
+        "competitors": [
+            {
+                "id": c.id,
+                "name": c.name,
+                "price": float(c.price),
+                "highlights": c.highlights,
+                "highlights_text": " · ".join(str(value) for value in (c.highlights or {}).values()),
+            }
+            for c in competitors
+        ],
         "contents": [{"id": c.id, "type": c.content_type, "status": c.status, "revision": c.revision, "payload": c.payload} for c in contents],
         "experiment": None if not experiment else {"id": experiment.id, "title": experiment.title, "status": experiment.status, "strategy": experiment.strategy, "decision_note": experiment.decision_note},
         "metrics": None if not metric else metric_view(metric),
