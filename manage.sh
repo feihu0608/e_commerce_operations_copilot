@@ -76,6 +76,7 @@ case "$command" in
   update)
     "$0" backup
     git pull --ff-only
+    export APP_VERSION="$(git rev-parse --short HEAD 2>/dev/null || echo dev)"
     architecture_guard
     prepare_runtime
     docker compose up -d --build --remove-orphans
