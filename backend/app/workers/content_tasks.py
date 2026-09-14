@@ -4,10 +4,11 @@ import time
 
 from sqlalchemy import func, select
 
+from ..core.config import get_settings
 from ..domain.models import ContentDocument, Experiment, GenerationTask
 from ..infrastructure.database import SessionLocal
 from ..integrations.siliconflow import SiliconFlowGateway
-from ..services.task_runtime import claim_task, finish_task, record_event
+from ..services.task_runtime import claim_task, extend_attempt_lease, finish_task, record_event
 from ..workflows.checkpoint import workflow_checkpointer
 from ..workflows.graph import run_generation_workflow
 from ..workflows.state import GenerationState, WorkflowContext
@@ -62,6 +63,13 @@ def generate_content(self, task_id: int, content_type: str):
             return
         task = db.get(GenerationTask, task_id)
         try:
+            extend_attempt_lease(
+                db,
+                task.id,
+                attempt.id,
+                get_settings().text_workflow_lease_seconds,
+                "bounded_langgraph_model_calls",
+            )
             initial_state: GenerationState = {
                 "task_id": task.id,
                 "attempt_id": attempt.id,

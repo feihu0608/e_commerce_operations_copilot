@@ -166,6 +166,17 @@ def update_progress(db: Session, task_id: int, attempt_id: int, progress: int, e
     return True
 
 
+def extend_attempt_lease(db: Session, task_id: int, attempt_id: int, seconds: int, reason: str) -> bool:
+    task = db.scalar(select(GenerationTask).where(GenerationTask.id == task_id).with_for_update())
+    attempt = db.get(TaskAttempt, attempt_id)
+    if not task or not attempt or task.status != "running" or attempt.status != "running":
+        return False
+    attempt.lease_expires_at = utcnow() + timedelta(seconds=seconds)
+    record_event(db, task_id, "lease_extended", attempt_id=attempt_id, seconds=seconds, reason=reason)
+    db.commit()
+    return True
+
+
 def finish_task(
     db: Session,
     task_id: int,

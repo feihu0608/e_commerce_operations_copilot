@@ -27,6 +27,7 @@ class Settings(BaseModel):
     app_version: str = os.getenv("APP_VERSION", "dev")
     cors_origins: str = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
     task_lease_seconds: int = int(os.getenv("TASK_LEASE_SECONDS", "120"))
+    text_workflow_lease_seconds: int = int(os.getenv("TEXT_WORKFLOW_LEASE_SECONDS", "360"))
     outbox_poll_seconds: float = float(os.getenv("OUTBOX_POLL_SECONDS", "2"))
     media_max_bytes: int = int(os.getenv("MEDIA_MAX_BYTES", str(50 * 1024 * 1024)))
     video_poll_seconds: int = int(os.getenv("VIDEO_POLL_SECONDS", "5"))

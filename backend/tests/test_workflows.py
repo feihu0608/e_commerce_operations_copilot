@@ -160,6 +160,8 @@ def test_mock_content_worker_persists_schema_validated_task_specific_revision(mo
         assert session.scalar(select(func.count()).select_from(ModelInvocation)) == 1
         event = session.scalar(select(TaskEvent).where(TaskEvent.task_id == task_id, TaskEvent.event_type == "langgraph_completed"))
         assert event.payload["node_trace"] == ["load_context", "generate", "validate", "persist"]
+        lease_event = session.scalar(select(TaskEvent).where(TaskEvent.task_id == task_id, TaskEvent.event_type == "lease_extended"))
+        assert lease_event.payload["seconds"] == 360
         result = task_result(task_id, None, session)
         assert result["content"]["id"] == content.id
 
