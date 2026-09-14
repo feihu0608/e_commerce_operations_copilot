@@ -28,6 +28,8 @@ class Settings(BaseModel):
     cors_origins: str = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
     task_lease_seconds: int = int(os.getenv("TASK_LEASE_SECONDS", "120"))
     text_workflow_lease_seconds: int = int(os.getenv("TEXT_WORKFLOW_LEASE_SECONDS", "360"))
+    text_model_timeout_seconds: int = int(os.getenv("TEXT_MODEL_TIMEOUT_SECONDS", "150"))
+    text_model_max_tokens: int = int(os.getenv("TEXT_MODEL_MAX_TOKENS", "4096"))
     outbox_poll_seconds: float = float(os.getenv("OUTBOX_POLL_SECONDS", "2"))
     media_max_bytes: int = int(os.getenv("MEDIA_MAX_BYTES", str(50 * 1024 * 1024)))
     video_poll_seconds: int = int(os.getenv("VIDEO_POLL_SECONDS", "5"))
@@ -48,6 +50,10 @@ class Settings(BaseModel):
             raise ValueError("AI_MODE and MEDIA_MODE must be mock or live")
         if self.langgraph_checkpoint_mode not in {"postgres", "memory"}:
             raise ValueError("LANGGRAPH_CHECKPOINT_MODE must be postgres or memory")
+        if self.text_model_timeout_seconds <= 0 or self.text_model_max_tokens <= 0:
+            raise ValueError("TEXT_MODEL_TIMEOUT_SECONDS and TEXT_MODEL_MAX_TOKENS must be positive")
+        if self.text_model_timeout_seconds * 2 >= self.text_workflow_lease_seconds:
+            raise ValueError("TEXT_WORKFLOW_LEASE_SECONDS must exceed two text model timeouts")
         return self
 
 

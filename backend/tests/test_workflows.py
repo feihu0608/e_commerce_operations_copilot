@@ -1,5 +1,6 @@
 from pathlib import Path
 from contextlib import nullcontext
+import asyncio
 
 import pytest
 import jwt
@@ -31,6 +32,7 @@ from app.core.security import create_access_token
 from app.services.task_runtime import claim_task, create_generation_task, finish_task
 from app.workers import content_tasks as tasks
 from app.workers import media_tasks
+from app.integrations.siliconflow import SiliconFlowGateway
 
 
 def memory_session() -> Session:
@@ -251,6 +253,78 @@ def test_production_rejects_default_secret_and_tokens_carry_revocation_version()
     payload = jwt.decode(token, get_settings().app_secret_key, algorithms=["HS256"])
     assert payload["sub"] == "7"
     assert payload["ver"] == 3
+
+
+def test_text_model_timeout_budget_must_fit_inside_worker_lease():
+    settings = Settings(text_workflow_lease_seconds=360, text_model_timeout_seconds=150, text_model_max_tokens=4096)
+    assert settings.text_model_timeout_seconds == 150
+    with pytest.raises(ValidationError, match="must exceed two text model timeouts"):
+        Settings(text_workflow_lease_seconds=300, text_model_timeout_seconds=150)
+
+
+def test_siliconflow_chat_uses_configured_timeout_and_token_limit(monkeypatch):
+    observed = {}
+
+    class Response:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"choices": [{"message": {"content": "{}"}}]}
+
+    class Client:
+        def __init__(self, timeout):
+            observed["timeout"] = timeout
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_args):
+            return None
+
+        async def post(self, _url, headers, json):
+            observed["headers"] = headers
+            observed["body"] = json
+            return Response()
+
+    monkeypatch.setattr("app.integrations.siliconflow.httpx.AsyncClient", Client)
+    gateway = SiliconFlowGateway()
+    gateway.settings = Settings(
+        ai_mode="live",
+        siliconflow_api_key="test-only-key",
+        text_model_timeout_seconds=150,
+        text_model_max_tokens=4096,
+    )
+    assert asyncio.run(gateway.chat("system", "user")) == "{}"
+    assert observed["timeout"] == 150
+    assert observed["body"]["max_tokens"] == 4096
+
+
+def test_live_worker_reports_exception_type_when_provider_message_is_empty(monkeypatch):
+    factory = memory_session_factory()
+
+    class TimeoutGateway:
+        async def chat(self, *_args, **_kwargs):
+            raise TimeoutError()
+
+    monkeypatch.setattr(tasks, "SessionLocal", factory)
+    monkeypatch.setattr(tasks, "workflow_checkpointer", lambda: nullcontext(InMemorySaver()))
+    monkeypatch.setattr(tasks, "SiliconFlowGateway", TimeoutGateway)
+    with factory() as session:
+        product = Product(name="超时错误测试", category="数码手机", price=3999, inventory=5)
+        session.add(product)
+        session.commit()
+        task, _ = create_generation_task(session, product.id, "creative", "创意超时", "live", None)
+        task_id = task.id
+
+    tasks.generate_content.run(task_id, "creative")
+
+    with factory() as session:
+        failed = session.get(GenerationTask, task_id)
+        assert failed.status == "failed"
+        assert failed.error_message == "模型调用或输出校验失败：TimeoutError"
+        invocation = session.scalar(select(ModelInvocation).where(ModelInvocation.task_id == task_id))
+        assert invocation.error_code == "TimeoutError"
 
 
 def test_remote_media_download_rejects_insecure_or_private_targets(monkeypatch):

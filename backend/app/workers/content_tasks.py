@@ -111,4 +111,5 @@ def generate_content(self, task_id: int, content_type: str):
             task = db.get(GenerationTask, task_id)
             if task:
                 record_invocation(db, task, "failed", int((time.perf_counter() - started) * 1000), type(exc).__name__)
-            finish_task(db, task_id, attempt.id, "failed", error_code=type(exc).__name__, error_message=f"模型调用或输出校验失败：{str(exc)[:240]}")
+            detail = str(exc).strip() or type(exc).__name__
+            finish_task(db, task_id, attempt.id, "failed", error_code=type(exc).__name__, error_message=f"模型调用或输出校验失败：{detail[:240]}")

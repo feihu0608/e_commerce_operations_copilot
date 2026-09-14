@@ -26,9 +26,10 @@ class SiliconFlowGateway:
             "model": model or self.settings.text_model,
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
             "temperature": 0.4,
+            "max_tokens": self.settings.text_model_max_tokens,
             "response_format": {"type": "json_object"},
         }
-        async with httpx.AsyncClient(timeout=90) as client:
+        async with httpx.AsyncClient(timeout=self.settings.text_model_timeout_seconds) as client:
             response = await client.post(f"{self.settings.siliconflow_base_url}/chat/completions", headers=self._headers(), json=body)
             response.raise_for_status()
             return response.json()["choices"][0]["message"]["content"]
