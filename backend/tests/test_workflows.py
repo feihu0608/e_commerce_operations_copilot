@@ -1,6 +1,7 @@
 from pathlib import Path
 from contextlib import nullcontext
 import asyncio
+from types import SimpleNamespace
 
 import pytest
 import jwt
@@ -347,3 +348,56 @@ def test_remote_media_download_rejects_insecure_or_private_targets(monkeypatch):
     monkeypatch.setattr(media_tasks.socket, "getaddrinfo", lambda *args, **kwargs: [(2, 1, 6, "", ("127.0.0.1", 443))])
     with pytest.raises(ValueError, match="非公网"):
         media_tasks._validate_remote_url("https://example.com/file.png")
+
+
+def test_media_signature_detection_covers_supported_formats():
+    assert media_tasks._detect_media_type(b"\x89PNG\r\n\x1a\nrest") == "image/png"
+    assert media_tasks._detect_media_type(b"\xff\xd8\xffrest") == "image/jpeg"
+    assert media_tasks._detect_media_type(b"RIFFxxxxWEBPrest") == "image/webp"
+    assert media_tasks._detect_media_type(b"xxxxftypisomrest") == "video/mp4"
+    assert media_tasks._detect_media_type(b"\x1aE\xdf\xa3rest") == "video/webm"
+    assert media_tasks._detect_media_type(b"not-media") is None
+
+
+def test_octet_stream_image_is_accepted_only_after_signature_validation(monkeypatch, tmp_path):
+    image_bytes = b"\x89PNG\r\n\x1a\n" + b"safe-image-payload"
+    payload = {"value": image_bytes}
+
+    class Response:
+        headers = {"content-type": "application/octet-stream"}
+
+        def raise_for_status(self):
+            return None
+
+        async def aiter_bytes(self):
+            yield payload["value"]
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_args):
+            return None
+
+    class Client:
+        def __init__(self, **_kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_args):
+            return None
+
+        def stream(self, *_args, **_kwargs):
+            return Response()
+
+    monkeypatch.setattr(media_tasks, "_validate_remote_url", lambda _url: None)
+    monkeypatch.setattr(media_tasks.httpx, "AsyncClient", Client)
+    monkeypatch.setattr(media_tasks, "get_settings", lambda: SimpleNamespace(storage_dir=str(tmp_path), media_max_bytes=1024))
+    result_url = asyncio.run(media_tasks.save_remote_media("https://example.com/no-extension", 25, "image"))
+    assert result_url == "/storage/generated/task-25.png"
+    assert (tmp_path / "generated" / "task-25.png").read_bytes() == image_bytes
+    payload["value"] = b"not-an-image"
+    with pytest.raises(ValueError, match="文件签名不受支持"):
+        asyncio.run(media_tasks.save_remote_media("https://example.com/no-extension", 26, "image"))
+    assert not (tmp_path / "generated" / ".task-26.part").exists()

@@ -133,6 +133,20 @@ def _validate_remote_url(remote_url: str):
             raise ValueError("媒体地址解析到非公网地址")
 
 
+def _detect_media_type(data: bytes) -> str | None:
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if data.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if len(data) >= 12 and data.startswith(b"RIFF") and data[8:12] == b"WEBP":
+        return "image/webp"
+    if len(data) >= 12 and data[4:8] == b"ftyp":
+        return "video/mp4"
+    if data.startswith(b"\x1aE\xdf\xa3"):
+        return "video/webm"
+    return None
+
+
 async def save_remote_media(remote_url: str, task_id: int, kind: str) -> str:
     _validate_remote_url(remote_url)
     cfg = get_settings()
@@ -141,26 +155,37 @@ async def save_remote_media(remote_url: str, task_id: int, kind: str) -> str:
     suffix = Path(urlparse(remote_url).path).suffix.lower()
     allowed_suffixes = {"image": {".png", ".jpg", ".jpeg", ".webp"}, "video": {".mp4", ".webm"}}
     allowed_types = {"image": {"image/png", "image/jpeg", "image/webp"}, "video": {"video/mp4", "video/webm"}}
-    if suffix not in allowed_suffixes[kind]:
-        suffix = ".png" if kind == "image" else ".mp4"
-    target = directory / f"task-{task_id}{suffix}"
-    temporary = target.with_suffix(target.suffix + ".part")
+    suffix_for_type = {"image/png": ".png", "image/jpeg": ".jpg", "image/webp": ".webp", "video/mp4": ".mp4", "video/webm": ".webm"}
+    generic_types = {"", "application/octet-stream", "binary/octet-stream"}
+    temporary = directory / f".task-{task_id}.part"
     total = 0
+    signature = bytearray()
     try:
         async with httpx.AsyncClient(timeout=240, follow_redirects=True) as client:
             async with client.stream("GET", remote_url) as response:
                 response.raise_for_status()
                 content_type = response.headers.get("content-type", "").split(";", 1)[0].lower()
-                if content_type not in allowed_types[kind]:
+                if content_type not in allowed_types[kind] and content_type not in generic_types:
                     raise ValueError(f"媒体类型不受支持：{content_type or 'unknown'}")
                 with temporary.open("wb") as output:
                     async for chunk in response.aiter_bytes():
                         total += len(chunk)
                         if total > cfg.media_max_bytes:
                             raise ValueError("媒体文件超过大小限制")
+                        if len(signature) < 32:
+                            signature.extend(chunk[: 32 - len(signature)])
                         output.write(chunk)
         if total == 0:
             raise ValueError("媒体文件为空")
+        detected_type = _detect_media_type(bytes(signature))
+        if detected_type not in allowed_types[kind]:
+            raise ValueError(f"媒体文件签名不受支持：{detected_type or 'unknown'}")
+        if content_type not in generic_types and content_type != detected_type:
+            raise ValueError(f"媒体响应类型与文件签名不一致：{content_type} != {detected_type}")
+        detected_suffix = suffix_for_type[detected_type]
+        if suffix not in allowed_suffixes[kind] or suffix_for_type.get(detected_type) != suffix:
+            suffix = detected_suffix
+        target = directory / f"task-{task_id}{suffix}"
         temporary.replace(target)
     finally:
         if temporary.exists():
