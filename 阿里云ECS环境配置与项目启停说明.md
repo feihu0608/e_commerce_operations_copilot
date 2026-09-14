@@ -33,7 +33,7 @@ GitHub `main` 与 ECS `origin/main` 已对齐，服务器工作区干净。
 
 | Compose 服务 | 镜像/组件 | 当前用途与验证 |
 | --- | --- | --- |
-| `postgres` | PostgreSQL 16 Alpine | 业务数据、任务状态和初始化演示数据；健康检查通过 |
+| `postgres` | PostgreSQL 16 Alpine | 业务数据、任务状态和初始化演示数据；健康检查通过；按需映射主机 5432 供开发机连接 |
 | `redis` | Redis 7 Alpine | Celery Broker 与 Result Backend；`PING` 返回 `PONG` |
 | `backend` | Python 3.12、FastAPI、Uvicorn、SQLAlchemy、psycopg | `/api/health` 与登录接口通过，容器健康 |
 | `worker` | Celery 5.5，单 Worker 并发 1 | 已完成一次商品诊断异步任务并写回 PostgreSQL |
@@ -100,13 +100,14 @@ Ubuntu UFW 已启用并设置开机启动，只增加了以下入站规则：
 | 80/TCP | HTTP 访问，由 Nginx 提供 |
 | 443/TCP | HTTPS 访问，由 Nginx 提供 |
 
-PostgreSQL 的 `5432`、Redis 的 `6379` 以及对象存储管理端口没有开放公网。Docker Compose 也不应为这些服务配置公网 `ports`；它们只通过 Compose 内部网络通信。
+Redis 的 `6379` 以及对象存储管理端口没有开放公网。PostgreSQL 的 `5432` 已按开发调试需要映射到 ECS 主机；必须在阿里云安全组中把 5432 的来源限制为开发机公网 IP，禁止长期对 `0.0.0.0/0` 开放。
 
 UFW 只负责服务器内部防火墙。还需要在阿里云 ECS 控制台的安全组中允许：
 
 - 22/TCP：建议来源限制为自己的固定公网 IP；调试阶段至少避免长期对全网开放。
 - 80/TCP：应用需要 HTTP 访问时开放。
 - 443/TCP：配置域名和 HTTPS 后开放。
+- 5432/TCP：仅开发机直连 PostgreSQL 时开放，来源必须限制为开发机公网 IP；不用时立即删除规则。
 
 本机已在 UFW 启用后再次测试公网 SSH，`<ECS_PUBLIC_IP>:22` 连接成功。
 
@@ -353,6 +354,28 @@ TEXT_MODEL=Qwen/Qwen3.6-27B
 
 登录页支持注册普通运营账号。内置 `operator`、`manager` 账号的密码不写入代码、文档或 Git；如需重新设置，应通过安全的服务器维护流程更新数据库密码哈希，并把新值仅保存在受限的私有密码管理位置。
 
+### 6.8 从本机连接 PostgreSQL
+
+Compose 将 ECS 主机的 `5432` 映射到 PostgreSQL 容器。连接参数中的用户名、数据库名和密码保存在服务器私有 `.env` 中，可登录 ECS 后查看：
+
+```bash
+cd /root/myproject/e_commerce_operations_copilot
+grep -E '^(POSTGRES_DB|POSTGRES_USER|POSTGRES_PASSWORD)=' .env
+```
+
+本机数据库工具的参数：
+
+```text
+Host: <ECS_PUBLIC_IP>
+Port: 5432
+Database: 以上命令显示的 POSTGRES_DB
+Username: 以上命令显示的 POSTGRES_USER
+Password: 以上命令显示的 POSTGRES_PASSWORD
+SSL mode: prefer（当前未单独配置数据库 TLS）
+```
+
+验证结束后如果不再需要直连，应从阿里云安全组删除 5432 规则，并删除 Compose 中的 `postgres.ports` 映射后重新部署。更安全的长期方案是保持 5432 不公开，通过 SSH 隧道连接。
+
 ## 7 2 核 4 GiB 部署约束
 
 建议只运行以下核心容器：
@@ -381,9 +404,9 @@ Compose 中建议设置容器内存上限，避免某个 Worker 占满服务器�
 
 编写 `compose.yaml` 时遵守以下规则：
 
-- 只有 Nginx 映射主机的 `80:80` 和后续的 `443:443`。
+- Nginx 映射主机的 `80:80` 和后续的 `443:443`；开发期 PostgreSQL 可按需映射 `5432:5432`。
 - FastAPI 可以只使用 `expose`，由 Nginx 通过内部网络转发。
-- PostgreSQL、Redis 不配置公网 `ports`。
+- Redis 不配置公网 `ports`；PostgreSQL 仅在开发期按需映射 5432，并由安全组限制来源 IP。
 - 数据库和 Redis 使用命名卷或明确的持久化挂载。
 - 每个服务配置健康检查、日志限制和重启策略。
 - 密码和模型密钥从 `.env` 或专用 Secret 注入，不写入镜像。
@@ -446,6 +469,6 @@ passwd
 - 未执行 56 个系统软件包的全量升级。
 - 已添加 GitHub 项目专用 Deploy Key，并允许该仓库读写；ECS 仓库已经配置为使用 `/root/.ssh/github_ecommerce_ed25519`。尚未更换已经暴露过的 root 密码，也尚未关闭 SSH 密码登录。
 
-阿里云安全组已经放行 HTTP 80。截图中还包含 MySQL 3306、Oracle 1521、SQL Server 1433、PostgreSQL 5432、Redis 6379 和 RDP 3389 等本项目不需要的公网规则，应删除这些规则，只保留 SSH 22、HTTP 80 以及后续真正启用 HTTPS 时的 443。
+阿里云安全组已经放行 HTTP 80。截图中还包含 MySQL 3306、Oracle 1521、SQL Server 1433、Redis 6379 和 RDP 3389 等本项目不需要的公网规则，应删除。PostgreSQL 5432 在本次本机开发期间保留，但来源必须限制为开发机公网 IP；不再直连后立即删除。长期只保留 SSH 22、HTTP 80 以及后续真正启用 HTTPS 时的 443。
 
 这些事项应在应用代码、域名及实际外部服务确定后继续配置。
