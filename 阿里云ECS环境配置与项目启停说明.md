@@ -239,6 +239,8 @@ cd /root/myproject/e_commerce_operations_copilot
 
 `update` 会先创建 PostgreSQL 格式化备份，再执行 `git pull --ff-only`、构建、Alembic 迁移和 Compose 重启。更新后执行 `./manage.sh doctor`。不要直接在 ECS 修改受 Git 管理的源码，否则后续拉取会因工作区冲突停止。
 
+备份文件保存在 `backups/*.dump`，管理脚本会将其所有者设为应用 UID 10001，并强制权限为 `0600`，避免同机其他用户读取业务数据。
+
 ## 6 管理脚本
 
 服务器已经安装：

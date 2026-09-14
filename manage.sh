@@ -74,6 +74,7 @@ case "$command" in
     backup_file="backups/ecommerce_ops_$(date +%Y%m%d_%H%M%S).dump"
     docker compose exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' > "$backup_file"
     chown 10001:10001 "$backup_file"
+    chmod 0600 "$backup_file"
     echo "数据库备份完成: $backup_file"
     ;;
   guard) architecture_guard ;;
