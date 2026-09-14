@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, JSON, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
-from .database import Base
+from ..infrastructure.database import Base
 
 
 def utcnow():
@@ -88,6 +88,7 @@ class Experiment(Base):
     __tablename__ = "experiments"
     id: Mapped[int] = mapped_column(primary_key=True)
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"), index=True)
+    task_id: Mapped[int | None] = mapped_column(ForeignKey("generation_tasks.id", ondelete="SET NULL"), unique=True, nullable=True)
     title: Mapped[str] = mapped_column(String(200))
     status: Mapped[str] = mapped_column(String(20), default="submitted")
     strategy: Mapped[dict] = mapped_column(JSON, default=dict)

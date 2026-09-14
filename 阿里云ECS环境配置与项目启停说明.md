@@ -271,6 +271,7 @@ cd /root/myproject/e_commerce_operations_copilot
 ```bash
 cd /root/myproject/e_commerce_operations_copilot
 ./manage.sh status
+./manage.sh guard
 ```
 
 预期所有必要服务为 `running` 或 `healthy`。只有容器处于运行状态不代表应用可用，还应检查 HTTP：

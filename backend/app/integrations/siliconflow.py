@@ -1,7 +1,7 @@
 import asyncio
 from typing import Any, Callable
 import httpx
-from .config import get_settings
+from ..core.config import get_settings
 
 
 class SiliconFlowGateway:

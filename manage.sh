@@ -4,7 +4,7 @@ set -Eeuo pipefail
 PROJECT_DIR="${PROJECT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 
 usage() {
-  echo "用法: $0 {prepare|start|stop|pause|restart|status|logs|pull|build|migrate|backup|doctor|update|config} [服务名]"
+  echo "用法: $0 {prepare|start|stop|pause|restart|status|logs|pull|build|migrate|backup|guard|doctor|update|config} [服务名]"
   echo "  prepare  创建运行目录并设置非 root 容器写权限"
   echo "  start    创建并启动全部容器"
   echo "  stop     停止并移除容器和网络，保留数据卷"
@@ -16,6 +16,7 @@ usage() {
   echo "  build    构建应用镜像"
   echo "  migrate  执行数据库迁移"
   echo "  backup   备份 PostgreSQL 到 backups 目录"
+  echo "  guard    校验已批准架构基线和模块边界"
   echo "  doctor   检查配置、容器、迁移、健康与就绪状态"
   echo "  update   拉取 Git 代码、构建并重启"
   echo "  config   校验 Compose 配置"
@@ -36,19 +37,23 @@ prepare_runtime() {
   chown -R 10001:10001 "$PROJECT_DIR/storage" "$PROJECT_DIR/backups"
 }
 
+architecture_guard() {
+  python3 "$PROJECT_DIR/scripts/check_architecture.py"
+}
+
 case "$command" in
   prepare) prepare_runtime; echo "运行目录已准备" ;;
-  start) prepare_runtime; docker compose up -d --remove-orphans; docker compose ps ;;
+  start) architecture_guard; prepare_runtime; docker compose up -d --remove-orphans; docker compose ps ;;
   stop) docker compose down --remove-orphans ;;
   pause) docker compose stop ;;
-  restart) prepare_runtime; docker compose up -d --build --remove-orphans; docker compose ps ;;
+  restart) architecture_guard; prepare_runtime; docker compose up -d --build --remove-orphans; docker compose ps ;;
   status) docker compose ps -a ;;
   logs)
     if [[ -n "$service" ]]; then docker compose logs --tail=200 -f "$service"
     else docker compose logs --tail=200 -f
     fi ;;
   pull) docker compose pull ;;
-  build) docker compose build ;;
+  build) architecture_guard; docker compose build ;;
   migrate) docker compose run --rm migrate ;;
   backup)
     prepare_runtime
@@ -57,7 +62,9 @@ case "$command" in
     chown 10001:10001 "$backup_file"
     echo "数据库备份完成: $backup_file"
     ;;
+  guard) architecture_guard ;;
   doctor)
+    architecture_guard
     docker compose config -q
     docker compose ps
     docker compose run --rm migrate alembic current
@@ -69,6 +76,7 @@ case "$command" in
   update)
     "$0" backup
     git pull --ff-only
+    architecture_guard
     prepare_runtime
     docker compose up -d --build --remove-orphans
     docker compose ps

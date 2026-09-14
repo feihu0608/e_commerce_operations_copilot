@@ -4,12 +4,63 @@ from uuid import uuid4
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from .config import get_settings
-from .models import AuditLog, GenerationTask, OutboxEvent, Product, TaskAttempt, TaskEvent, utcnow
-from .observability import current_request_id
+from ..core.config import get_settings
+from ..core.observability import current_request_id
+from ..domain.models import AuditLog, Competitor, ContentDocument, Experiment, GenerationTask, MetricRecord, OutboxEvent, Product, TaskAttempt, TaskEvent, utcnow
 
 
 TERMINAL_STATUSES = {"succeeded", "failed", "timeout", "cancelled"}
+
+
+def _workflow_input_snapshot(db: Session, product: Product, kind: str) -> dict:
+    snapshot = {
+        "product_id": product.id,
+        "name": product.name,
+        "category": product.category,
+        "price": str(product.price),
+        "summary": product.summary,
+    }
+    if kind == "diagnosis":
+        competitors = db.scalars(select(Competitor).where(Competitor.product_id == product.id).order_by(Competitor.id)).all()
+        snapshot["competitors"] = [
+            {"name": item.name, "price": str(item.price), "highlights": item.highlights}
+            for item in competitors
+        ]
+    if kind in {"creative", "strategy"}:
+        content_types = ["diagnosis"] if kind == "creative" else ["diagnosis", "creative"]
+        documents = db.scalars(
+            select(ContentDocument)
+            .where(ContentDocument.product_id == product.id, ContentDocument.content_type.in_(content_types))
+            .order_by(ContentDocument.id.desc())
+        ).all()
+        latest: dict[str, dict] = {}
+        for document in documents:
+            latest.setdefault(document.content_type, document.payload)
+        snapshot["confirmed_inputs"] = latest
+    if kind == "review":
+        metric = db.scalar(select(MetricRecord).where(MetricRecord.product_id == product.id).order_by(MetricRecord.id.desc()))
+        experiment = db.scalar(
+            select(Experiment)
+            .where(Experiment.product_id == product.id, Experiment.status == "approved")
+            .order_by(Experiment.id.desc())
+        )
+        if metric:
+            ctr = round(metric.clicks / metric.impressions * 100, 2) if metric.impressions else None
+            conversion_rate = round(metric.paid_orders / metric.clicks * 100, 2) if metric.clicks else None
+            roas = round(float(metric.gmv / metric.ad_spend), 2) if metric.ad_spend else None
+            snapshot["actual_metrics"] = {
+                "period": metric.period,
+                "impressions": metric.impressions,
+                "clicks": metric.clicks,
+                "paid_orders": metric.paid_orders,
+                "gmv": float(metric.gmv),
+                "ad_spend": float(metric.ad_spend),
+                "ctr": ctr,
+                "conversion_rate": conversion_rate,
+                "roas": roas,
+            }
+        snapshot["approved_strategy"] = experiment.strategy if experiment else None
+    return snapshot
 
 
 def record_event(db: Session, task_id: int, event_type: str, **payload) -> TaskEvent:
@@ -63,13 +114,7 @@ def create_generation_task(
         provider_mode=provider_mode,
         idempotency_key=idempotency_key,
         request_id=current_request_id(),
-        input_snapshot={
-            "product_id": product.id,
-            "name": product.name,
-            "category": product.category,
-            "price": str(product.price),
-            "summary": product.summary,
-        },
+        input_snapshot=_workflow_input_snapshot(db, product, kind),
     )
     db.add(task)
     db.flush()

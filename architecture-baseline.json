@@ -1,0 +1,69 @@
+{
+  "architecture_document": "电商运营助手架构设计文档.md",
+  "sha256": "3fb4ca9edd001fcd6d85c5d5ce1149af6f0694dc92fc713ad19bb9083ff9d959",
+  "approved_change_id": "ACP-0002",
+  "approved_at": "2026-09-14",
+  "required_evidence": {
+    "backend/pyproject.toml": [
+      "langgraph>=0.6,<1.0",
+      "langgraph-checkpoint-postgres>=2.0,<3.0"
+    ],
+    "backend/app/workflows/state.py": [
+      "class GenerationState(TypedDict",
+      "\"diagnosis\"",
+      "\"creative\"",
+      "\"strategy\"",
+      "\"review\""
+    ],
+    "backend/app/workflows/graph.py": [
+      "StateGraph(GenerationState",
+      "graph.add_conditional_edges"
+    ],
+    "backend/app/workflows/checkpoint.py": [
+      "PostgresSaver.from_conn_string"
+    ],
+    "backend/app/workers/content_tasks.py": [
+      "run_generation_workflow",
+      "langgraph_completed"
+    ],
+    "skills/ai-project-builder/SKILL.md": [
+      "Architecture baseline governance",
+      "Never resolve it by quietly weakening"
+    ],
+    "docs/architecture-change-proposals/ACP-0001-restore-langgraph-baseline.md": [
+      "状态：Approved",
+      "项目所有者明确要求"
+    ],
+    "docs/architecture-change-proposals/ACP-0002-modular-backend-layout.md": [
+      "状态：Approved",
+      "按 API、core、domain、infrastructure、integrations、workflows、workers 分包"
+    ]
+  },
+  "required_directories": [
+    "backend/app/api",
+    "backend/app/core",
+    "backend/app/domain",
+    "backend/app/infrastructure",
+    "backend/app/integrations",
+    "backend/app/services",
+    "backend/app/workflows",
+    "backend/app/workers"
+  ],
+  "thin_entrypoints": {
+    "backend/app/main.py": 10,
+    "backend/app/tasks.py": 10,
+    "backend/app/dispatcher.py": 10,
+    "backend/app/workers/tasks.py": 10
+  },
+  "forbidden_root_modules": [
+    "backend/app/ai_gateway.py",
+    "backend/app/ai_schemas.py",
+    "backend/app/ai_workflows.py",
+    "backend/app/config.py",
+    "backend/app/database.py",
+    "backend/app/models.py",
+    "backend/app/observability.py",
+    "backend/app/security.py",
+    "backend/app/task_runtime.py"
+  ]
+}

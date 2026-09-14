@@ -9,12 +9,15 @@
 - React + TypeScript + Vite 前端，由 Nginx 提供同源入口和限流、安全响应头。
 - FastAPI 模块化单体 API，PostgreSQL 是业务与任务状态事实来源。
 - Redis + Celery Worker 执行 AI 和媒体任务。
+- LangGraph 使用 Typed State 编排诊断、创意、投放建议和经营复盘；生产检查点保存在 PostgreSQL。
 - Transactional Outbox Dispatcher 在数据库提交后可靠投递任务。
 - `task_attempts`、`task_events` 记录执行尝试与时间线，重复消息不会重复执行已领取任务。
 - 文本 AI 输出经过 Pydantic Schema 校验，最多执行一次结构修复。
 - 视频采用 submit/poll 两阶段短任务，不占用 Worker 循环等待。
 - Alembic 管理数据库版本；部署时先迁移，再启动 API、Worker 和 Dispatcher。
 - 审计日志、请求 ID、模型调用元数据、健康与就绪探针支持问题追踪。
+- 后端按 `api/core/domain/infrastructure/integrations/services/workflows/workers` 分包；根入口保持薄适配。
+- `python scripts/check_architecture.py` 校验批准文档哈希、关键组件、模块目录和入口体积，阻止静默架构漂移。
 
 完整设计见 [电商运营助手架构设计文档.md](./电商运营助手架构设计文档.md)，准生产升级范围和证据见 [准生产级升级与验收说明.md](./准生产级升级与验收说明.md)。
 
@@ -29,7 +32,10 @@ uv sync --frozen
 uv run python -m compileall -q app migrations
 uv run pytest -q
 
-Set-Location -LiteralPath '..\frontend'
+Set-Location -LiteralPath '..'
+python scripts/check_architecture.py
+
+Set-Location -LiteralPath 'frontend'
 pnpm install --frozen-lockfile
 pnpm build
 ```
@@ -58,6 +64,7 @@ cd /root/myproject/e_commerce_operations_copilot
 
 ```bash
 ./manage.sh status
+./manage.sh guard
 ./manage.sh logs backend
 ./manage.sh logs worker
 ./manage.sh logs dispatcher

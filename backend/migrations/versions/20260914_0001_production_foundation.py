@@ -4,8 +4,8 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy import inspect, text
 
-from app.database import Base
-from app import models  # noqa: F401
+from app.infrastructure.database import Base
+from app.domain import models  # noqa: F401
 
 
 revision = "20260914_0001"

@@ -51,4 +51,45 @@ class CreativeOutput(BaseModel):
         return values
 
 
-AI_OUTPUT_SCHEMAS = {"diagnosis": DiagnosisOutput, "creative": CreativeOutput}
+class StrategyOutput(BaseModel):
+    audience: str = Field(min_length=8, max_length=500)
+    channel: str = Field(min_length=2, max_length=50)
+    budget: float = Field(gt=0, le=1000000)
+    period: str = Field(min_length=2, max_length=50)
+    creative_angle: str = Field(min_length=8, max_length=500)
+    target_ctr: float = Field(gt=0, le=100)
+    stop_roas: float = Field(ge=0, le=100)
+    rationale: list[str] = Field(min_length=3, max_length=8)
+
+    @field_validator("rationale")
+    @classmethod
+    def validate_rationale(cls, values: list[str]):
+        cleaned = [value.strip() for value in values if value.strip()]
+        if len(cleaned) != len(values) or len(set(cleaned)) != len(cleaned):
+            raise ValueError("rationale items must be non-empty and unique")
+        return cleaned
+
+
+class ReviewOutput(BaseModel):
+    executive_summary: str = Field(min_length=8, max_length=1500)
+    goal_vs_actual: dict[str, str | float | int | None]
+    observations: list[str] = Field(min_length=2, max_length=8)
+    possible_causes: list[str] = Field(min_length=2, max_length=8)
+    next_actions: list[str] = Field(min_length=3, max_length=8)
+    evidence_limitations: list[str] = Field(min_length=1, max_length=6)
+
+    @field_validator("observations", "possible_causes", "next_actions", "evidence_limitations")
+    @classmethod
+    def validate_review_lists(cls, values: list[str]):
+        cleaned = [value.strip() for value in values if value.strip()]
+        if len(cleaned) != len(values) or len(set(cleaned)) != len(cleaned):
+            raise ValueError("review items must be non-empty and unique")
+        return cleaned
+
+
+AI_OUTPUT_SCHEMAS = {
+    "diagnosis": DiagnosisOutput,
+    "creative": CreativeOutput,
+    "strategy": StrategyOutput,
+    "review": ReviewOutput,
+}

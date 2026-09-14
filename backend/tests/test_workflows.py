@@ -1,4 +1,5 @@
 from pathlib import Path
+from contextlib import nullcontext
 
 import pytest
 import jwt
@@ -8,11 +9,14 @@ from sqlalchemy import create_engine, func, select
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 from starlette.datastructures import UploadFile
+from langgraph.checkpoint.memory import InMemorySaver
 
-from app.database import Base
-from app.ai_schemas import CreativeOutput, DiagnosisOutput
-from app.config import Settings, get_settings
-from app.main import (
+from app.infrastructure.database import Base
+from app.domain.ai_schemas import CreativeOutput, DiagnosisOutput
+from app.workflows.graph import run_generation_workflow
+from app.workflows.state import GenerationState, WorkflowContext
+from app.core.config import Settings, get_settings
+from app.api.application import (
     DecisionInput,
     ExperimentInput,
     create_experiment,
@@ -22,10 +26,11 @@ from app.main import (
     submit_experiment,
     task_result,
 )
-from app.models import AuditLog, ContentDocument, Experiment, GenerationTask, MetricRecord, ModelInvocation, OutboxEvent, Product, TaskAttempt, TaskEvent, User
-from app.security import create_access_token
-from app.task_runtime import claim_task, create_generation_task, finish_task
-from app import tasks
+from app.domain.models import AuditLog, ContentDocument, Experiment, GenerationTask, MetricRecord, ModelInvocation, OutboxEvent, Product, TaskAttempt, TaskEvent, User
+from app.core.security import create_access_token
+from app.services.task_runtime import claim_task, create_generation_task, finish_task
+from app.workers import content_tasks as tasks
+from app.workers import media_tasks
 
 
 def memory_session() -> Session:
@@ -136,6 +141,7 @@ def test_duplicate_delivery_only_creates_one_attempt_and_terminal_state_is_prote
 def test_mock_content_worker_persists_schema_validated_task_specific_revision(monkeypatch):
     factory = memory_session_factory()
     monkeypatch.setattr(tasks, "SessionLocal", factory)
+    monkeypatch.setattr(tasks, "workflow_checkpointer", lambda: nullcontext(InMemorySaver()))
     with factory() as session:
         product = Product(name="结构化输出测试", category="数码手机", price=4999, inventory=8)
         session.add(product)
@@ -152,8 +158,73 @@ def test_mock_content_worker_persists_schema_validated_task_specific_revision(mo
         assert content is not None
         assert len(content.payload["image_directions"]) == 3
         assert session.scalar(select(func.count()).select_from(ModelInvocation)) == 1
+        event = session.scalar(select(TaskEvent).where(TaskEvent.task_id == task_id, TaskEvent.event_type == "langgraph_completed"))
+        assert event.payload["node_trace"] == ["load_context", "generate", "validate", "persist"]
         result = task_result(task_id, None, session)
         assert result["content"]["id"] == content.id
+
+
+def test_langgraph_live_validation_uses_one_bounded_repair_and_persists():
+    class Gateway:
+        def __init__(self):
+            self.responses = ["not-json", '{"target_audience":"面向重视影像和续航的城市用户群体","price_analysis":"价格位于中高端区间，需要强化差异化价值证据","selling_points":["夜景影像","全天续航","稳定通信"],"conversion_barriers":["品牌信任不足","参数差异不明显"],"actions":["补充样张","强化服务承诺","进行素材对比测试"]}']
+
+        async def chat(self, *_args, **_kwargs):
+            return self.responses.pop(0)
+
+    persisted = []
+    state: GenerationState = {
+        "task_id": 11,
+        "attempt_id": 3,
+        "product_id": 5,
+        "workflow_kind": "diagnosis",
+        "provider_mode": "live",
+        "input_snapshot": {"product_id": 5, "name": "测试手机", "category": "数码手机", "price": "3999"},
+        "prompt_version": "test",
+        "schema_version": "v1",
+        "evidence_refs": [],
+        "candidate": None,
+        "validation_errors": [],
+        "repair_count": 0,
+        "max_repairs": 1,
+        "output_revision_id": None,
+        "workflow_status": "running",
+        "node_trace": [],
+    }
+    result = run_generation_workflow(
+        state,
+        WorkflowContext(gateway=Gateway(), persist=lambda current: persisted.append(current["candidate"]) or "content:1:revision:1"),
+        InMemorySaver(),
+    )
+    assert result["workflow_status"] == "succeeded"
+    assert result["repair_count"] == 1
+    assert result["node_trace"] == ["load_context", "generate", "validate", "repair", "validate", "persist"]
+    assert len(persisted) == 1
+
+
+@pytest.mark.parametrize("kind, expected_model", [("strategy", Experiment), ("review", ContentDocument)])
+def test_langgraph_strategy_and_review_workers_persist_business_outputs(monkeypatch, kind, expected_model):
+    factory = memory_session_factory()
+    monkeypatch.setattr(tasks, "SessionLocal", factory)
+    monkeypatch.setattr(tasks, "workflow_checkpointer", lambda: nullcontext(InMemorySaver()))
+    with factory() as session:
+        product = Product(name="闭环工作流手机", category="数码手机", price=4599, inventory=12)
+        session.add(product)
+        session.commit()
+        task, _ = create_generation_task(session, product.id, kind, f"{kind} test", "mock", None)
+        task_id = task.id
+
+    tasks.generate_content.run(task_id, kind)
+
+    with factory() as session:
+        assert session.get(GenerationTask, task_id).status == "succeeded"
+        if expected_model is Experiment:
+            output = session.scalar(select(Experiment).where(Experiment.task_id == task_id))
+            assert output is not None and output.status == "draft"
+            assert output.strategy["provider_mode"] == "mock"
+        else:
+            output = session.scalar(select(ContentDocument).where(ContentDocument.task_id == task_id))
+            assert output is not None and output.content_type == "review"
 
 
 def test_ai_output_contract_rejects_incomplete_or_duplicate_content():
@@ -182,7 +253,7 @@ def test_production_rejects_default_secret_and_tokens_carry_revocation_version()
 
 def test_remote_media_download_rejects_insecure_or_private_targets(monkeypatch):
     with pytest.raises(ValueError, match="HTTPS"):
-        tasks._validate_remote_url("http://example.com/file.png")
-    monkeypatch.setattr(tasks.socket, "getaddrinfo", lambda *args, **kwargs: [(2, 1, 6, "", ("127.0.0.1", 443))])
+        media_tasks._validate_remote_url("http://example.com/file.png")
+    monkeypatch.setattr(media_tasks.socket, "getaddrinfo", lambda *args, **kwargs: [(2, 1, 6, "", ("127.0.0.1", 443))])
     with pytest.raises(ValueError, match="非公网"):
-        tasks._validate_remote_url("https://example.com/file.png")
+        media_tasks._validate_remote_url("https://example.com/file.png")

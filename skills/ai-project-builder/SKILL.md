@@ -44,6 +44,24 @@ Ask only questions whose answers are not already supported by the workspace or p
 - Preserve unrelated user changes. Do not deploy, push, spend money, or mutate external systems beyond the user's authorization.
 - Do not claim success while required tests are failing, unrun, or substituted by a weaker layer. State exactly what was and was not verified.
 
+## Architecture baseline governance
+
+- Treat the user-approved architecture document and ADR set as a locked delivery baseline, not prose that may be rewritten to match an incomplete implementation.
+- Before implementation, record a SHA-256 baseline and run the repository architecture guard. Run it again before commit, deployment, and final delivery.
+- When code and architecture disagree, report the mismatch as a defect. Never resolve it by quietly weakening, deleting, or relabeling the approved architecture.
+- Any material change to frameworks, state ownership, persistence, external integrations, deployment topology, security boundaries, or required workflows needs an Architecture Change Proposal (ACP) and the user's explicit approval before code or baseline changes.
+- An agent must never fabricate approval, mark its own ACP approved, or update an approval record merely because a deadline is short. Record the exact user-approved decision and keep the previous baseline recoverable in Git.
+- Documentation updates may describe verified implementation progress, but must preserve unimplemented approved items as open gaps until they are implemented or explicitly descoped by the user.
+- Delivery evidence must include the architecture-guard result and a requirement-to-component-to-test trace. A passing test suite does not excuse architecture drift.
+
+## Module and repository structure gate
+
+- Organize production-like AI backends by responsibility. At minimum separate API delivery, domain models/contracts, application services, infrastructure/persistence, external provider adapters, AI workflows, and asynchronous workers when those concerns exist.
+- Keep framework entrypoints such as `main.py`, Celery bootstrap files, and CLI modules thin. They may assemble dependencies and expose applications, but must not become catch-all files containing unrelated routes, provider code, workflow nodes, persistence, and business rules.
+- Put each LangGraph workflow family in an explicit workflow package with separate typed state, graph construction/routing, nodes, checkpoint integration, and workflow service or catalog. Shared code must have a named ownership boundary, not an ambiguous `utils.py` dumping ground.
+- Enforce boundaries with import/structure tests or a repository architecture check. The check must fail when forbidden dependencies or oversized catch-all entrypoints reappear.
+- Update the architecture document and module map together with code after an approved structural change. Preserve compatibility entrypoints only when deployment tooling needs them, and label them as thin adapters.
+
 ## Definition of done
 
 A project is complete only when requirements are traceable, the selected vertical journeys work end to end, real AI mode has at least one successful provider call for every required modality, results are persisted and visible, role and failure paths are exercised, clean-environment startup is documented, target-like deployment is healthy when deployment is in scope, and the evidence pack allows another person to reproduce the result.

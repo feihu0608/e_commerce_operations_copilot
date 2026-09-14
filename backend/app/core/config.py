@@ -31,6 +31,7 @@ class Settings(BaseModel):
     media_max_bytes: int = int(os.getenv("MEDIA_MAX_BYTES", str(50 * 1024 * 1024)))
     video_poll_seconds: int = int(os.getenv("VIDEO_POLL_SECONDS", "5"))
     video_max_polls: int = int(os.getenv("VIDEO_MAX_POLLS", "84"))
+    langgraph_checkpoint_mode: str = os.getenv("LANGGRAPH_CHECKPOINT_MODE", "postgres")
     demo_operator_password: str = os.getenv("DEMO_OPERATOR_PASSWORD", "")
     demo_manager_password: str = os.getenv("DEMO_MANAGER_PASSWORD", "")
 
@@ -44,6 +45,8 @@ class Settings(BaseModel):
             raise ValueError("APP_SECRET_KEY must be changed in production")
         if self.ai_mode not in {"mock", "live"} or self.media_mode not in {"mock", "live"}:
             raise ValueError("AI_MODE and MEDIA_MODE must be mock or live")
+        if self.langgraph_checkpoint_mode not in {"postgres", "memory"}:
+            raise ValueError("LANGGRAPH_CHECKPOINT_MODE must be postgres or memory")
         return self
 
 
