@@ -15,6 +15,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 from app.infrastructure.database import Base
 from app.domain.ai_schemas import CreativeOutput, DiagnosisOutput
 from app.workflows.graph import run_generation_workflow
+from app.workflows.nodes import load_context
 from app.workflows.state import GenerationState, WorkflowContext
 from app.core.config import Settings, get_settings
 from app.api.application import (
@@ -298,6 +299,19 @@ def test_siliconflow_chat_uses_configured_timeout_and_token_limit(monkeypatch):
     assert asyncio.run(gateway.chat("system", "user")) == "{}"
     assert observed["timeout"] == 150
     assert observed["body"]["max_tokens"] == 4096
+    assert observed["body"]["enable_thinking"] is False
+
+
+def test_creative_prompt_contains_nested_output_schema():
+    state = {
+        "workflow_kind": "creative",
+        "input_snapshot": {"product_id": 4, "name": "测试手机", "category": "数码手机", "price": "4999"},
+    }
+    prompt = load_context(state)["user_prompt"]
+    assert '"image_directions"' in prompt
+    assert '"video_scripts"' in prompt
+    assert '"hook"' in prompt
+    assert '"shots"' in prompt
 
 
 def test_live_worker_reports_exception_type_when_provider_message_is_empty(monkeypatch):

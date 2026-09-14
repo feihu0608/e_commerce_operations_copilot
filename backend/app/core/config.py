@@ -30,6 +30,7 @@ class Settings(BaseModel):
     text_workflow_lease_seconds: int = int(os.getenv("TEXT_WORKFLOW_LEASE_SECONDS", "360"))
     text_model_timeout_seconds: int = int(os.getenv("TEXT_MODEL_TIMEOUT_SECONDS", "150"))
     text_model_max_tokens: int = int(os.getenv("TEXT_MODEL_MAX_TOKENS", "4096"))
+    text_model_enable_thinking: bool = os.getenv("TEXT_MODEL_ENABLE_THINKING", "false").lower() in {"1", "true", "yes"}
     outbox_poll_seconds: float = float(os.getenv("OUTBOX_POLL_SECONDS", "2"))
     media_max_bytes: int = int(os.getenv("MEDIA_MAX_BYTES", str(50 * 1024 * 1024)))
     video_poll_seconds: int = int(os.getenv("VIDEO_POLL_SECONDS", "5"))

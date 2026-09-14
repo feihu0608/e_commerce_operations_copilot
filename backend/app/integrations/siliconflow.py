@@ -27,6 +27,7 @@ class SiliconFlowGateway:
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
             "temperature": 0.4,
             "max_tokens": self.settings.text_model_max_tokens,
+            "enable_thinking": self.settings.text_model_enable_thinking,
             "response_format": {"type": "json_object"},
         }
         async with httpx.AsyncClient(timeout=self.settings.text_model_timeout_seconds) as client:
