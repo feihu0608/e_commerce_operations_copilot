@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta, timezone
-from decimal import Decimal
+from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal, InvalidOperation
 from hashlib import sha256
 import csv
 import io
@@ -403,21 +403,158 @@ def review(product_id: int, _: User = Depends(get_current_user), db: Session = D
     return {"product": serialize_product(product), "experiment": None if not experiment else {"title": experiment.title, "status": experiment.status, "strategy": experiment.strategy}, "metrics": values, "findings": findings, "actions": ["补充夜景人像原片与竞品对比", "突出 30 天无忧换机服务", "下一轮测试续航场景素材"]}
 
 
-@app.post("/api/imports/preview")
-def import_preview(file: UploadFile = File(...), _: User = Depends(get_current_user)):
+IMPORT_COLUMNS = [
+    "统计日期", "商品编码", "品牌", "商品名称", "商品类目", "店铺", "渠道", "商品单价",
+    "曝光量", "点击量", "支付订单量", "支付金额", "广告花费", "退款金额", "库存", "备注",
+]
+IMPORT_INTEGER_COLUMNS = ["曝光量", "点击量", "支付订单量", "库存"]
+IMPORT_DECIMAL_COLUMNS = ["商品单价", "支付金额", "广告花费", "退款金额"]
+
+
+def parse_import_file(file: UploadFile):
     name, raw = (file.filename or "").lower(), file.file.read()
     if len(raw) > 5 * 1024 * 1024:
         raise HTTPException(status_code=413, detail="演示版单文件不能超过 5 MB")
     if name.endswith(".csv"):
-        rows = list(csv.DictReader(io.StringIO(raw.decode("utf-8-sig"))))[:20]
+        try:
+            reader = csv.DictReader(io.StringIO(raw.decode("utf-8-sig")))
+            columns = [str(x or "").strip() for x in (reader.fieldnames or [])]
+            rows = list(reader)
+        except UnicodeDecodeError as exc:
+            raise HTTPException(status_code=422, detail="CSV 必须使用 UTF-8 编码") from exc
     elif name.endswith(".xlsx"):
         sheet = load_workbook(io.BytesIO(raw), read_only=True, data_only=True).active
         values = list(sheet.iter_rows(values_only=True))
-        headers = [str(x or "") for x in values[0]] if values else []
-        rows = [dict(zip(headers, row)) for row in values[1:21]]
+        columns = [str(x or "").strip() for x in values[0]] if values else []
+        rows = [dict(zip(columns, row)) for row in values[1:]]
     else:
         raise HTTPException(status_code=422, detail="只支持 CSV 或 XLSX")
-    return {"filename": file.filename, "row_count_previewed": len(rows), "columns": list(rows[0].keys()) if rows else [], "rows": rows, "errors": []}
+    rows = [row for row in rows if any(value not in (None, "") for value in row.values())]
+    return columns, rows
+
+
+def validate_import_rows(columns: list[str], rows: list[dict[str, Any]]):
+    errors: list[str] = []
+    missing_columns = [column for column in IMPORT_COLUMNS if column not in columns]
+    if missing_columns:
+        errors.append(f"缺少字段：{'、'.join(missing_columns)}")
+    if not rows:
+        errors.append("文件中没有可导入的数据行")
+    normalized: list[dict[str, Any]] = []
+    for index, source in enumerate(rows, start=2):
+        if missing_columns:
+            break
+        row = {key: source.get(key) for key in IMPORT_COLUMNS}
+        row_errors: list[str] = []
+        for key in ["统计日期", "商品编码", "品牌", "商品名称", "商品类目", "店铺", "渠道"]:
+            row[key] = str(row[key] or "").strip()
+            if not row[key]:
+                row_errors.append(f"{key}不能为空")
+        raw_date = source.get("统计日期")
+        try:
+            if isinstance(raw_date, datetime):
+                row["统计日期"] = raw_date.date().isoformat()
+            elif isinstance(raw_date, date):
+                row["统计日期"] = raw_date.isoformat()
+            else:
+                row["统计日期"] = datetime.strptime(str(raw_date).strip(), "%Y-%m-%d").date().isoformat()
+        except (TypeError, ValueError):
+            row_errors.append("统计日期必须为 YYYY-MM-DD")
+        for key in IMPORT_INTEGER_COLUMNS:
+            try:
+                value = Decimal(str(source.get(key)).strip())
+                if not value.is_finite() or value != value.to_integral_value() or value < 0:
+                    raise ValueError
+                row[key] = int(value)
+            except (InvalidOperation, TypeError, ValueError):
+                row_errors.append(f"{key}必须为非负整数")
+        for key in IMPORT_DECIMAL_COLUMNS:
+            try:
+                value = Decimal(str(source.get(key)).strip())
+                if not value.is_finite() or value < 0 or (key == "商品单价" and value <= 0):
+                    raise ValueError
+                row[key] = value
+            except (InvalidOperation, TypeError, ValueError):
+                row_errors.append(f"{key}必须为{'大于 0' if key == '商品单价' else '非负'}数值")
+        if not row_errors and row["点击量"] > row["曝光量"]:
+            row_errors.append("点击量不能超过曝光量")
+        if not row_errors and row["支付订单量"] > row["点击量"]:
+            row_errors.append("支付订单量不能超过点击量")
+        if row_errors:
+            errors.append(f"第 {index} 行：{'；'.join(row_errors)}")
+        else:
+            row["备注"] = str(source.get("备注") or "").strip()
+            normalized.append(row)
+    return normalized, errors
+
+
+@app.post("/api/imports/preview")
+def import_preview(file: UploadFile = File(...), _: User = Depends(get_current_user)):
+    columns, rows = parse_import_file(file)
+    _, errors = validate_import_rows(columns, rows)
+    return {
+        "status": "preview",
+        "can_import": not errors,
+        "message": "校验通过，尚未写入数据库" if not errors else "校验未通过，请修正文件后重试",
+        "filename": file.filename,
+        "row_count_total": len(rows),
+        "row_count_previewed": min(len(rows), 20),
+        "columns": columns,
+        "rows": rows[:20],
+        "validation_errors": errors,
+    }
+
+
+@app.post("/api/imports/commit")
+def import_commit(file: UploadFile = File(...), _: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    columns, rows = parse_import_file(file)
+    normalized, errors = validate_import_rows(columns, rows)
+    if errors:
+        raise HTTPException(status_code=422, detail="；".join(errors[:10]))
+    stats = {"products_created": 0, "products_updated": 0, "metrics_created": 0, "metrics_updated": 0}
+    created_product_names: set[str] = set()
+    updated_product_names: set[str] = set()
+    try:
+        for row in normalized:
+            product = db.scalar(select(Product).where(Product.name == row["商品名称"]).order_by(Product.id))
+            summary = f"{row['品牌']} · {row['商品编码']} · {row['店铺']}"
+            if product:
+                product.category = row["商品类目"]
+                product.price = row["商品单价"]
+                product.inventory = row["库存"]
+                product.summary = summary
+                if product.name not in created_product_names and product.name not in updated_product_names:
+                    stats["products_updated"] += 1
+                    updated_product_names.add(product.name)
+            else:
+                product = Product(
+                    name=row["商品名称"], category=row["商品类目"], price=row["商品单价"],
+                    inventory=row["库存"], summary=summary,
+                )
+                db.add(product)
+                db.flush()
+                stats["products_created"] += 1
+                created_product_names.add(product.name)
+            period = f"{row['统计日期']} · {row['渠道']}"
+            metric = db.scalar(select(MetricRecord).where(MetricRecord.product_id == product.id, MetricRecord.period == period))
+            if metric:
+                metric.impressions = row["曝光量"]
+                metric.clicks = row["点击量"]
+                metric.paid_orders = row["支付订单量"]
+                metric.gmv = row["支付金额"]
+                metric.ad_spend = row["广告花费"]
+                stats["metrics_updated"] += 1
+            else:
+                db.add(MetricRecord(
+                    product_id=product.id, period=period, impressions=row["曝光量"], clicks=row["点击量"],
+                    paid_orders=row["支付订单量"], gmv=row["支付金额"], ad_spend=row["广告花费"],
+                ))
+                stats["metrics_created"] += 1
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    return {"status": "imported", "rows_imported": len(normalized), **stats}
 
 
 @app.get("/api/settings")

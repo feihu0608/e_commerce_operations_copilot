@@ -12,6 +12,8 @@ type ProductDetail = { product: Product; competitors: Array<{id:number; name:str
 type Experiment = { id:number; product_id?:number; title:string; status:string; strategy:Record<string, unknown>; decision_note?:string }
 type Metric = { period:string; impressions:number; clicks:number; paid_orders:number; gmv:number; ad_spend:number; ctr:number|null; conversion_rate:number|null; roas:number|null }
 type TaskResult = { task:Task; product:Product|null; content:{id:number;type:string;status:string;revision:number;payload:Record<string,unknown>}|null; result_url:string|null }
+type ImportPreview = { status:'preview'; can_import:boolean; message:string; filename:string; row_count_total:number; row_count_previewed:number; columns:string[]; rows:Array<Record<string,unknown>>; validation_errors:string[] }
+type ImportCommit = { status:'imported'; rows_imported:number; products_created:number; products_updated:number; metrics_created:number; metrics_updated:number }
 
 const nav: Array<{id:Page; label:string; icon:typeof LayoutDashboard}> = [
   { id:'dashboard', label:'运营大盘', icon:LayoutDashboard },
@@ -126,7 +128,7 @@ export default function App() {
       {page==='tasks'&&<TasksPage tasks={tasks} resultLoading={resultLoading} onView={viewTaskResult} onAction={async(id,act)=>{await api(`/api/tasks/${id}/${act}`,{method:'POST'});await loadBase()}}/>}
       {page==='approvals'&&<ApprovalsPage user={user} items={experiments} onDecision={async(id,decision)=>{await api(`/api/experiments/${id}/decision`,{method:'POST',body:JSON.stringify({decision,note:decision==='approved'?'符合小预算测款规则，同意执行':'请补充素材差异化与止损阈值'})});await loadBase()}}/>}
       {page==='review'&&<ReviewPage products={products} selected={selected} onSelect={selectProduct} detail={detail}/>}
-      {page==='import'&&<ImportPage/>}
+      {page==='import'&&<ImportPage onImported={loadBase}/>}
       {page==='settings'&&<SettingsPage manager={user.role==='manager'}/>}
     </main>
     {taskResult&&<ResultModal result={taskResult} onClose={()=>setTaskResult(null)}/>}
@@ -164,7 +166,35 @@ function ApprovalsPage({user,items,onDecision}:{user:User;items:Experiment[];onD
 
 function ReviewPage({products,selected,onSelect,detail}:{products:Product[];selected:number|null;onSelect:(id:number)=>void;detail:ProductDetail|null}){const m=detail?.metrics;return <><div className="filter-bar"><label>复盘商品<select value={selected||''} onChange={e=>onSelect(Number(e.target.value))}>{products.map(p=><option value={p.id} key={p.id}>{p.name}</option>)}</select></label><span>指标口径：GMV 不扣退款 · ROAS = GMV / 广告花费</span></div>{m?<><section className="stat-grid review-stats"><Stat label="曝光量" value={m.impressions.toLocaleString()} hint={m.period} icon={Activity}/><Stat label="CTR" value={`${m.ctr??'—'}%`} hint="点击量 / 曝光量" icon={BarChart3}/><Stat label="转化率" value={`${m.conversion_rate??'—'}%`} hint="支付订单 / 点击量" icon={CheckCircle2}/><Stat label="ROAS" value={String(m.roas??'—')} hint={`GMV ${money(m.gmv)}`} icon={Sparkles}/></section><div className="two-cols"><div className="panel review-block"><h3>本轮结论</h3><p>影像卖点主图具备点击吸引力，详情页信任证据仍有提升空间。建议保留高点击方向，同时优化服务承诺和真实样张表达。</p><div className="insight positive-bg">CTR 达到演示目标，主图方向可进入下一轮验证。</div></div><div className="panel review-block"><h3>下一轮行动</h3><ol><li>补充夜景人像原片与竞品对比</li><li>突出 30 天无忧换机服务</li><li>测试长续航场景化短视频素材</li></ol></div></div></>:<div className="panel"><Empty text="该商品暂无经营指标，请先回填演示数据"/></div>}</>}
 
-function ImportPage(){const [result,setResult]=useState<any>(null);const [busy,setBusy]=useState(false);async function upload(file:File){setBusy(true);try{const fd=new FormData();fd.append('file',file);setResult(await api('/api/imports/preview',{method:'POST',body:fd}))}catch(e){setResult({error:e instanceof Error?e.message:'上传失败'})}finally{setBusy(false)}}return <div className="panel import-panel"><div className="upload-zone"><Upload size={36}/><h3>{busy?'正在解析…':'上传经营数据'}</h3><p>支持 CSV、XLSX，演示版单文件不超过 5 MB；提交前仅做预览，不直接写库。</p><label className="primary">选择文件<input type="file" accept=".csv,.xlsx" hidden onChange={e=>e.target.files?.[0]&&upload(e.target.files[0])}/></label></div>{result&&<div className="import-result">{result.error?<div className="error-box">{result.error}</div>:<><h3>{result.filename}</h3><p>已预览 {result.row_count_previewed} 行 · 字段：{result.columns.join('、')}</p>{result.rows?.length>0&&<pre>{JSON.stringify(result.rows.slice(0,5),null,2)}</pre>}</>}</div>}</div>}
+function ImportPage({onImported}:{onImported:()=>Promise<void>}) {
+  const [file,setFile]=useState<File|null>(null)
+  const [preview,setPreview]=useState<ImportPreview|null>(null)
+  const [imported,setImported]=useState<ImportCommit|null>(null)
+  const [error,setError]=useState('')
+  const [stage,setStage]=useState<'idle'|'previewing'|'ready'|'importing'|'done'>('idle')
+  async function upload(nextFile:File) {
+    setFile(nextFile); setPreview(null); setImported(null); setError(''); setStage('previewing')
+    try {
+      const fd=new FormData(); fd.append('file',nextFile)
+      const result=await api<ImportPreview>('/api/imports/preview',{method:'POST',body:fd})
+      setPreview(result); setStage(result.can_import?'ready':'idle')
+    } catch(e) { setError(e instanceof Error?e.message:'上传失败'); setStage('idle') }
+  }
+  async function commit() {
+    if(!file||!preview?.can_import)return
+    setError(''); setStage('importing')
+    try {
+      const fd=new FormData(); fd.append('file',file)
+      const result=await api<ImportCommit>('/api/imports/commit',{method:'POST',body:fd})
+      setImported(result); setStage('done'); await onImported()
+    } catch(e) { setError(e instanceof Error?e.message:'导入失败'); setStage('ready') }
+  }
+  return <div className="panel import-panel"><div className="upload-zone"><Upload size={36}/><h3>{stage==='previewing'?'正在解析…':stage==='importing'?'正在写入数据库…':'上传经营数据'}</h3><p>支持 CSV、XLSX，演示版单文件不超过 5 MB。先校验预览，再由你确认写入数据库。</p><label className="primary">重新选择文件<input type="file" accept=".csv,.xlsx" hidden disabled={stage==='previewing'||stage==='importing'} onChange={e=>e.target.files?.[0]&&upload(e.target.files[0])}/></label></div>
+    {error&&<div className="error-box import-message">{error}</div>}
+    {preview&&<div className="import-result"><h3>{preview.filename}</h3><div className={`import-state ${preview.can_import?'pending':'invalid'}`}><b>{preview.message}</b><span>{preview.can_import?'当前只是预览，点击下方按钮后才会真正入库。':'文件没有写入数据库。'}</span></div><p>文件共 {preview.row_count_total} 行，当前预览 {preview.row_count_previewed} 行 · 字段：{preview.columns.join('、')}</p>{preview.validation_errors.length>0&&<ul className="validation-errors">{preview.validation_errors.map((item,index)=><li key={index}>{item}</li>)}</ul>}{preview.rows.length>0&&<pre>{JSON.stringify(preview.rows.slice(0,5),null,2)}</pre>}{preview.can_import&&stage!=='done'&&<button className="primary import-confirm" disabled={stage==='importing'} onClick={commit}><Database size={17}/>{stage==='importing'?'正在导入…':'确认导入数据库'}</button>}</div>}
+    {imported&&<div className="import-success"><CheckCircle2 size={24}/><div><h3>导入成功，数据已写入数据库</h3><p>导入 {imported.rows_imported} 行 · 商品新增 {imported.products_created} / 更新 {imported.products_updated} · 经营指标新增 {imported.metrics_created} / 更新 {imported.metrics_updated}</p><small>现在可以在“商品工作台”和“经营复盘”中查看导入结果。重复导入同一文件会更新已有记录，不会重复新增。</small></div></div>}
+  </div>
+}
 
 function SettingsPage({manager}:{manager:boolean}){const [data,setData]=useState<any>(null);const [error,setError]=useState('');useEffect(()=>{if(manager)api('/api/settings').then(setData).catch(e=>setError(e.message))},[manager]);if(!manager)return <div className="panel"><Empty text="仅运营主管可以查看模型与运行配置"/></div>;return <div className="settings-grid"><div className="panel settings-summary"><span className="settings-icon"><Database/></span><div><small>运行模式</small><h2>{data?.ai_mode==='live'?'真实模型调用':'Mock 演示模式'}</h2><p>{data?.base_url||'加载中…'}</p></div><span className={`status ${data?.api_key_configured?'succeeded':'queued'}`}>{data?.api_key_configured?'Key 已配置':'等待配置 Key'}</span></div><div className="panel"><div className="panel-head"><h3>模型路由</h3><span>Worker 并发 {data?.worker_concurrency??1}</span></div>{error&&<div className="error-box">{error}</div>}<div className="model-list">{data&&Object.entries(data.models).map(([k,v])=><div key={k}><span>{k.toUpperCase()}</span><b>{String(v)}</b></div>)}</div><div className="security-note"><ShieldCheck/><span>模型密钥仅通过服务器 `.env` 注入，页面不会返回密钥原文。</span></div></div></div>}
 
