@@ -110,11 +110,23 @@ def serialize_product(product: Product):
     }
 
 
+def task_error_view(task: GenerationTask) -> tuple[str | None, bool]:
+    message = task.error_message
+    if not message:
+        return None, True
+    if "402 Payment Required" in message or "余额或额度不足" in message:
+        return "硅基流动账户余额或额度不足，请充值后重新生成", False
+    if "密钥无效" in message or "没有当前模型权限" in message:
+        return "模型服务密钥无效或没有当前模型权限，请联系管理员检查配置", False
+    return message, True
+
+
 def serialize_task(task: GenerationTask):
+    error_message, retryable = task_error_view(task)
     return {
         "id": task.id, "product_id": task.product_id, "kind": task.kind, "title": task.title,
         "status": task.status, "progress": task.progress, "provider_mode": task.provider_mode,
-        "error_message": task.error_message, "result_url": task.result_url,
+        "error_message": error_message, "retryable": retryable, "result_url": task.result_url,
         "request_id": task.request_id, "version": task.version, "retry_of_task_id": task.retry_of_task_id,
         "created_at": task.created_at, "updated_at": task.updated_at,
     }
@@ -409,6 +421,9 @@ def retry_task(task_id: int, user: User = Depends(get_current_user), db: Session
         raise HTTPException(status_code=404, detail="任务不存在")
     if old.status not in ("failed", "timeout", "cancelled"):
         raise HTTPException(status_code=409, detail="当前状态不能重试")
+    _, retryable = task_error_view(old)
+    if not retryable:
+        raise HTTPException(status_code=409, detail="该失败需要先处理模型账户额度或权限，请处理后从原功能入口重新生成")
     return serialize_task(enqueue(db, old.product_id, old.kind, f"{old.title} 重试", user.id, retry_of_task_id=old.id))
 
 

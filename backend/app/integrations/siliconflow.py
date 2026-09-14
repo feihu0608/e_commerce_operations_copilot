@@ -4,6 +4,36 @@ import httpx
 from ..core.config import get_settings
 
 
+class ProviderQuotaError(RuntimeError):
+    """The provider account cannot accept billable work until quota changes."""
+
+
+class ProviderAuthError(RuntimeError):
+    """The provider credential or model permission is invalid."""
+
+
+class ProviderRateLimitError(RuntimeError):
+    """The provider is temporarily rate limiting requests."""
+
+
+class ProviderRequestError(RuntimeError):
+    """The provider rejected the configured request."""
+
+
+def raise_for_provider_error(response: httpx.Response) -> None:
+    if response.status_code < 400:
+        return
+    if response.status_code == 402:
+        raise ProviderQuotaError("硅基流动账户余额或额度不足，请充值后重新生成")
+    if response.status_code in {401, 403}:
+        raise ProviderAuthError("模型服务密钥无效或没有当前模型权限，请联系管理员检查配置")
+    if response.status_code == 429:
+        raise ProviderRateLimitError("模型服务请求过于频繁，请稍后重试")
+    if 400 <= response.status_code < 500:
+        raise ProviderRequestError(f"模型服务拒绝请求（HTTP {response.status_code}），请联系管理员检查模型配置")
+    response.raise_for_status()
+
+
 class SiliconFlowGateway:
     def __init__(self):
         self.settings = get_settings()
@@ -32,7 +62,7 @@ class SiliconFlowGateway:
         }
         async with httpx.AsyncClient(timeout=self.settings.text_model_timeout_seconds) as client:
             response = await client.post(f"{self.settings.siliconflow_base_url}/chat/completions", headers=self._headers(), json=body)
-            response.raise_for_status()
+            raise_for_provider_error(response)
             return response.json()["choices"][0]["message"]["content"]
 
     async def generate_image(self, prompt: str) -> dict[str, Any]:
@@ -41,7 +71,7 @@ class SiliconFlowGateway:
         body = {"model": self.settings.image_model, "prompt": prompt, "image_size": "1024x1024", "batch_size": 1}
         async with httpx.AsyncClient(timeout=180) as client:
             response = await client.post(f"{self.settings.siliconflow_base_url}/images/generations", headers=self._headers(), json=body)
-            response.raise_for_status()
+            raise_for_provider_error(response)
             return response.json()
 
     async def generate_video(self, prompt: str, on_poll: Callable[[int], None] | None = None) -> dict[str, Any]:
@@ -67,7 +97,7 @@ class SiliconFlowGateway:
                 headers=self._headers(),
                 json={"model": self.settings.video_t2v_model, "prompt": prompt, "image_size": "720x1280"},
             )
-            response.raise_for_status()
+            raise_for_provider_error(response)
             request_id = response.json().get("requestId")
             if not request_id:
                 raise RuntimeError("视频服务未返回 requestId")
@@ -82,5 +112,5 @@ class SiliconFlowGateway:
                 headers=self._headers(),
                 json={"requestId": request_id},
             )
-            response.raise_for_status()
+            raise_for_provider_error(response)
             return response.json()

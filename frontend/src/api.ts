@@ -1,6 +1,6 @@
 export type User = { id: number; username: string; email: string; role: 'operator' | 'manager' }
 export type Product = { id: number; name: string; category: string; price: number; status: string; image_url: string; summary: string; inventory: number; warning_threshold: number; inventory_warning: boolean }
-export type Task = { id: number; product_id: number; kind: string; title: string; status: string; progress: number; provider_mode: string; error_message?: string; result_url?: string }
+export type Task = { id: number; product_id: number; kind: string; title: string; status: string; progress: number; provider_mode: string; error_message?: string; retryable?: boolean; result_url?: string }
 
 const TOKEN_KEY = 'ecommerce_ops_token'
 export const auth = {

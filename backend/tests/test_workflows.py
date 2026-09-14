@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 import pytest
 import jwt
+import httpx
 from fastapi import HTTPException
 from pydantic import ValidationError
 from sqlalchemy import create_engine, func, select
@@ -25,6 +26,8 @@ from app.api.application import (
     create_experiment,
     decide,
     import_commit,
+    retry_task,
+    serialize_task,
     serialize_product,
     submit_experiment,
     task_result,
@@ -34,7 +37,7 @@ from app.core.security import create_access_token
 from app.services.task_runtime import claim_task, create_generation_task, finish_task
 from app.workers import content_tasks as tasks
 from app.workers import media_tasks
-from app.integrations.siliconflow import SiliconFlowGateway
+from app.integrations.siliconflow import ProviderQuotaError, SiliconFlowGateway, raise_for_provider_error
 
 
 def memory_session() -> Session:
@@ -268,6 +271,8 @@ def test_siliconflow_chat_uses_configured_timeout_and_token_limit(monkeypatch):
     observed = {}
 
     class Response:
+        status_code = 200
+
         def raise_for_status(self):
             return None
 
@@ -301,6 +306,33 @@ def test_siliconflow_chat_uses_configured_timeout_and_token_limit(monkeypatch):
     assert observed["timeout"] == 150
     assert observed["body"]["max_tokens"] == 4096
     assert observed["body"]["enable_thinking"] is False
+
+
+def test_provider_402_is_classified_as_actionable_quota_error():
+    response = httpx.Response(402, request=httpx.Request("POST", "https://provider.test/chat"))
+    with pytest.raises(ProviderQuotaError, match="余额或额度不足"):
+        raise_for_provider_error(response)
+
+
+def test_quota_failure_is_sanitized_and_cannot_create_blind_retry():
+    session = memory_session()
+    product = Product(name="额度错误测试", category="数码手机", price=3999, inventory=5)
+    user = User(username="quota_operator", email="quota@test.local", password_hash="unused", role="operator")
+    session.add_all([product, user])
+    session.commit()
+    task, _ = create_generation_task(session, product.id, "review", "经营复盘", "live", user.id)
+    task.status = "failed"
+    task.progress = 100
+    task.error_message = "模型调用或输出校验失败：Client error '402 Payment Required' for url 'https://provider.test/chat'"
+    session.commit()
+
+    view = serialize_task(task)
+    assert view["error_message"] == "硅基流动账户余额或额度不足，请充值后重新生成"
+    assert view["retryable"] is False
+    with pytest.raises(HTTPException) as exc_info:
+        retry_task(task.id, user, session)
+    assert exc_info.value.status_code == 409
+    assert session.scalar(select(func.count()).select_from(GenerationTask)) == 1
 
 
 def test_creative_prompt_contains_nested_output_schema():
